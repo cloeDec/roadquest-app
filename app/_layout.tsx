@@ -1,26 +1,20 @@
-import {
-  DefaultTheme,
-  ThemeProvider
-} from "@react-navigation/native";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import "react-native-reanimated";
+import { Slot } from "expo-router";
+import { Provider } from "react-redux";
+import { store } from "../src/store";
+import { AuthProvider } from "../src/components/AuthProvider";
 
-export const unstable_settings = {
-  anchor: "(tabs)",
-};
+function RootLayoutNav() {
+  return (
+    <AuthProvider>
+      <Slot />
+    </AuthProvider>
+  );
+}
 
 export default function RootLayout() {
   return (
-    <ThemeProvider value={DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Provider store={store}>
+      <RootLayoutNav />
+    </Provider>
   );
 }

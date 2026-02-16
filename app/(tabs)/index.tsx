@@ -1,11 +1,21 @@
 import { Colors } from "@/src/constants/colors";
 import api from "@/src/services/api";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { logoutUser } from "@/src/store/slices/authSlice";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function TabOneScreen() {
   const [status, setStatus] = useState("Connecting to backend...");
   const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     checkBackend();
@@ -22,14 +32,34 @@ export default function TabOneScreen() {
     }
   };
 
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🏍️ RoadQuest</Text>
+
+      {user && (
+        <View style={styles.userInfo}>
+          <Text style={styles.welcomeText}>
+            Bienvenue, {user.username} !
+          </Text>
+          <Text style={styles.levelText}>
+            Niveau {user.level} • {user.xp} XP
+          </Text>
+        </View>
+      )}
+
       {loading ? (
         <ActivityIndicator size="large" color={Colors.dark.primary} />
       ) : (
         <Text style={styles.status}>{status}</Text>
       )}
+
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutButtonText}>Se déconnecter</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -40,6 +70,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: Colors.dark.background,
+    padding: 20,
   },
   title: {
     fontSize: 32,
@@ -47,8 +78,39 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     marginBottom: 20,
   },
+  userInfo: {
+    alignItems: "center",
+    marginBottom: 30,
+    padding: 20,
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 12,
+    width: "100%",
+  },
+  welcomeText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: Colors.dark.text,
+    marginBottom: 8,
+  },
+  levelText: {
+    fontSize: 16,
+    color: Colors.dark.secondary,
+  },
   status: {
     fontSize: 16,
     color: Colors.dark.textSecondary,
+    marginBottom: 40,
+  },
+  logoutButton: {
+    backgroundColor: Colors.dark.danger,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  logoutButtonText: {
+    color: Colors.dark.text,
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
