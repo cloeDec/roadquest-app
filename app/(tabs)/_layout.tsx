@@ -20,6 +20,12 @@ export default function TabLayout() {
           title: "Explore",
         }}
       />
+      <Tabs.Screen
+        name="ui-demo"
+        options={{
+          title: "UI Demo",
+        }}
+      />
     </Tabs>
   );
 }
