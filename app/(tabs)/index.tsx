@@ -1,7 +1,7 @@
-import { Colors } from "@/src/constants/colors";
 import api from "@/src/services/api";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { logoutUser } from "@/src/store/slices/authSlice";
+import { colors } from "@/src/ui";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -42,9 +42,7 @@ export default function TabOneScreen() {
 
       {user && (
         <View style={styles.userInfo}>
-          <Text style={styles.welcomeText}>
-            Bienvenue, {user.username} !
-          </Text>
+          <Text style={styles.welcomeText}>Bienvenue, {user.username} !</Text>
           <Text style={styles.levelText}>
             Niveau {user.level} • {user.xp} XP
           </Text>
@@ -52,7 +50,7 @@ export default function TabOneScreen() {
       )}
 
       {loading ? (
-        <ActivityIndicator size="large" color={Colors.dark.primary} />
+        <ActivityIndicator size="large" color={colors.brandPrimary} />
       ) : (
         <Text style={styles.status}>{status}</Text>
       )}
@@ -69,47 +67,47 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.dark.background,
+    backgroundColor: colors.backgroundPrimary,
     padding: 20,
   },
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: Colors.dark.text,
+    color: colors.textPrimary,
     marginBottom: 20,
   },
   userInfo: {
     alignItems: "center",
     marginBottom: 30,
     padding: 20,
-    backgroundColor: Colors.dark.surface,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: 12,
     width: "100%",
   },
   welcomeText: {
     fontSize: 20,
     fontWeight: "bold",
-    color: Colors.dark.text,
+    color: colors.textPrimary,
     marginBottom: 8,
   },
   levelText: {
     fontSize: 16,
-    color: Colors.dark.secondary,
+    color: colors.textSecondary,
   },
   status: {
     fontSize: 16,
-    color: Colors.dark.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 40,
   },
   logoutButton: {
-    backgroundColor: Colors.dark.danger,
+    backgroundColor: colors.danger,
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 8,
     marginTop: 20,
   },
   logoutButtonText: {
-    color: Colors.dark.text,
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: "600",
   },

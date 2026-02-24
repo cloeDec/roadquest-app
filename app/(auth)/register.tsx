@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Colors } from "../../src/constants/colors";
+import { colors } from "../../src/ui";
 import { useAppDispatch } from "../../src/store/hooks";
 import { registerUser } from "../../src/store/slices/authSlice";
 
@@ -123,50 +123,50 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     justifyContent: "center",
-    backgroundColor: Colors.dark.background,
+    backgroundColor: colors.backgroundPrimary,
   },
   title: {
     fontSize: 48,
     fontWeight: "bold",
-    color: Colors.dark.text,
+    color: colors.textPrimary,
     textAlign: "center",
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 24,
-    color: Colors.dark.textSecondary,
+    color: colors.textSecondary,
     textAlign: "center",
     marginBottom: 40,
   },
   input: {
-    backgroundColor: Colors.dark.surface,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    color: Colors.dark.text,
+    color: colors.textPrimary,
     fontSize: 16,
   },
   passwordHint: {
     fontSize: 12,
-    color: Colors.dark.textSecondary,
+    color: colors.textSecondary,
     marginBottom: 16,
     marginTop: -8,
     paddingHorizontal: 4,
   },
   button: {
-    backgroundColor: Colors.dark.primary,
+    backgroundColor: colors.brandPrimary,
     borderRadius: 12,
     padding: 16,
     marginTop: 8,
   },
   buttonText: {
-    color: Colors.dark.text,
+    color: colors.textPrimary,
     textAlign: "center",
     fontSize: 18,
     fontWeight: "bold",
   },
   link: {
-    color: Colors.dark.primary,
+    color: colors.brandPrimary,
     textAlign: "center",
     marginTop: 20,
     fontSize: 16,

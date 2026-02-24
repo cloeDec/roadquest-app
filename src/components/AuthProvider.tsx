@@ -4,7 +4,7 @@ import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { checkAuthToken } from "../store/slices/authSlice";
 import { SplashScreen } from "./SplashScreen";
-import { Colors } from "../constants/colors";
+import { colors } from "../ui";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   if (!isReady || isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.dark.primary} />
+        <ActivityIndicator size="large" color={colors.brandPrimary} />
       </View>
     );
   }
@@ -56,6 +56,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.dark.background,
+    backgroundColor: colors.backgroundPrimary,
   },
 });
