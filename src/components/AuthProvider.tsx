@@ -1,5 +1,5 @@
 import { useRouter, useSegments, useRootNavigationState } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { checkAuthToken } from "../store/slices/authSlice";
@@ -9,38 +9,55 @@ import { colors } from "../ui";
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
-  const segments = useSegments();
   const router = useRouter();
+  const segments = useSegments();
   const navigationState = useRootNavigationState();
-  const [isReady, setIsReady] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
+  const [appReady, setAppReady] = useState(false);
+  const [splashAnimationDone, setSplashAnimationDone] = useState(false);
+  const authCheckedRef = useRef(false);
+  const navigationDoneRef = useRef(false);
 
+  // Vérifier l'auth au démarrage (une seule fois)
   useEffect(() => {
-    dispatch(checkAuthToken());
+    if (authCheckedRef.current) return;
+    authCheckedRef.current = true;
+
+    dispatch(checkAuthToken()).finally(() => {
+      // Auth vérifiée, on peut continuer
+    });
   }, []);
 
+  // Navigation après que le splash soit fini et l'auth vérifiée
   useEffect(() => {
-    if (!navigationState?.key || isLoading) return;
-    setIsReady(true);
-  }, [navigationState?.key, isLoading]);
-
-  useEffect(() => {
-    if (!isReady || isLoading) return;
+    if (!navigationState?.key || !splashAnimationDone || navigationDoneRef.current || isLoading) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inTabsGroup = segments[0] === "(tabs)";
 
-    if (!isAuthenticated && !inAuthGroup) {
-      router.replace("/(auth)/login");
-    } else if (isAuthenticated && inAuthGroup) {
+    if (isAuthenticated && !inTabsGroup) {
       router.replace("/(tabs)");
+    } else if (!isAuthenticated && !inAuthGroup) {
+      router.replace("/(auth)/login");
     }
-  }, [isAuthenticated, segments, isLoading, isReady]);
 
-  if (showSplash) {
-    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+    navigationDoneRef.current = true;
+
+    // Petit délai pour laisser la navigation se faire
+    setTimeout(() => setAppReady(true), 100);
+  }, [navigationState?.key, splashAnimationDone, isAuthenticated, segments, isLoading]);
+
+  // Afficher le splash tant que l'app n'est pas prête
+  if (!appReady) {
+    return (
+      <SplashScreen
+        onFinish={() => {
+          setSplashAnimationDone(true);
+        }}
+      />
+    );
   }
 
-  if (!isReady || isLoading) {
+  if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.brandPrimary} />

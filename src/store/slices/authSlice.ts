@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import * as SecureStore from "expo-secure-store";
 import { authService } from "../../services/auth";
 
@@ -34,6 +34,7 @@ export const loginUser = createAsyncThunk(
     try {
       const response = await authService.login({ email, password });
       await SecureStore.setItemAsync("authToken", response.token);
+      await SecureStore.setItemAsync("userData", JSON.stringify(response.user));
       return response;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || "Connexion impossible");
@@ -47,6 +48,7 @@ export const registerUser = createAsyncThunk(
     try {
       const response = await authService.register({ email, username, password });
       await SecureStore.setItemAsync("authToken", response.token);
+      await SecureStore.setItemAsync("userData", JSON.stringify(response.user));
       return response;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || "Inscription impossible");
@@ -62,11 +64,33 @@ export const checkAuthToken = createAsyncThunk(
       if (!token) {
         return rejectWithValue("No token found");
       }
-      const response = await authService.getProfile();
-      return { user: response.user, token };
+
+      // Récupérer les données utilisateur stockées localement
+      const userDataStr = await SecureStore.getItemAsync("userData");
+
+      try {
+        // Essayer de récupérer le profil depuis le serveur
+        const response = await authService.getProfile();
+        // Sauvegarder les données utilisateur localement
+        await SecureStore.setItemAsync("userData", JSON.stringify(response.user));
+        return { user: response.user, token };
+      } catch (networkError: any) {
+        // Si erreur réseau mais qu'on a des données locales, les utiliser
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          return { user: userData, token };
+        }
+        // Si erreur 401, le token est invalide
+        if (networkError.response?.status === 401) {
+          await SecureStore.deleteItemAsync("authToken");
+          await SecureStore.deleteItemAsync("userData");
+          return rejectWithValue("Session expirée");
+        }
+        // Autre erreur sans données locales
+        throw networkError;
+      }
     } catch (error: any) {
-      await SecureStore.deleteItemAsync("authToken");
-      return rejectWithValue(error.response?.data?.error || "Session expirée");
+      return rejectWithValue(error.response?.data?.error || "Erreur d'authentification");
     }
   }
 );
@@ -75,27 +99,14 @@ export const logoutUser = createAsyncThunk(
   "auth/logout",
   async () => {
     await SecureStore.deleteItemAsync("authToken");
+    await SecureStore.deleteItemAsync("userData");
   }
 );
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
-  reducers: {
-    setUser: (state, action: PayloadAction<User>) => {
-      state.user = action.payload;
-      state.isAuthenticated = true;
-    },
-    setToken: (state, action: PayloadAction<string>) => {
-      state.token = action.payload;
-    },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload;
-    },
-    clearError: (state) => {
-      state.error = null;
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     // Login
     builder
@@ -166,5 +177,4 @@ const authSlice = createSlice({
   },
 });
 
-export const { setUser, setToken, setLoading, clearError } = authSlice.actions;
 export default authSlice.reducer;

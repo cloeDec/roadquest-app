@@ -1,14 +1,19 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import LogoSvg from "../../assets/images/Logo.svg";
+import { colors, gradients, gradientConfig } from "../ui";
 
 interface SplashScreenProps {
   onFinish: () => void;
 }
 
+// Variable globale pour s'assurer que l'animation ne se joue qu'une fois
+let hasAnimationStarted = false;
+
 export function SplashScreen({ onFinish }: SplashScreenProps) {
-  const [progress] = useState(new Animated.Value(0));
+  const progress = useRef(new Animated.Value(0)).current;
+  const hasCalledFinish = useRef(false);
 
   useEffect(() => {
     // Cacher immédiatement le splash natif d'Expo
@@ -16,13 +21,27 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       SplashScreen.hideAsync();
     });
 
+    // Ne démarrer l'animation qu'une seule fois
+    if (hasAnimationStarted) {
+      // Si l'animation a déjà été faite, appeler onFinish immédiatement
+      if (!hasCalledFinish.current) {
+        hasCalledFinish.current = true;
+        onFinish();
+      }
+      return;
+    }
+
+    hasAnimationStarted = true;
+
     Animated.timing(progress, {
       toValue: 1,
-      // duration: Infinity,
       duration: 5000,
       useNativeDriver: false,
     }).start(() => {
-      setTimeout(onFinish, 200);
+      if (!hasCalledFinish.current) {
+        hasCalledFinish.current = true;
+        setTimeout(onFinish, 200);
+      }
     });
   }, []);
 
@@ -33,9 +52,9 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   return (
     <LinearGradient
-      colors={["#0A0E27", "#1E2749"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
+      colors={[...gradients.background]}
+      start={gradientConfig.start}
+      end={gradientConfig.end}
       style={styles.container}
     >
       <View style={styles.content}>
@@ -80,12 +99,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#FF8C42",
+    color: colors.accentPrimary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#9CA3AF",
+    color: colors.textSecondary,
     fontWeight: "400",
   },
   progressContainer: {
@@ -101,7 +120,7 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: "100%",
-    backgroundColor: "#6C63FF",
+    backgroundColor: colors.brandPrimary,
     borderRadius: 3,
   },
 });

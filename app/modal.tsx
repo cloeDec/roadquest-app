@@ -1,10 +1,11 @@
-import { StyleSheet } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
+import { colors } from "@/src/ui";
 
 export default function ModalScreen() {
   return (
-    <div style={styles.container}>
-      <h1>This is a modal!</h1>
-    </div>
+    <View style={styles.container}>
+      <Text style={styles.title}>This is a modal!</Text>
+    </View>
   );
 }
 
@@ -14,9 +15,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
+    backgroundColor: colors.backgroundPrimary,
   },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: colors.textPrimary,
   },
 });

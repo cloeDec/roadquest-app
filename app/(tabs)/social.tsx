@@ -1,10 +1,10 @@
 import { View, StyleSheet, Text } from "react-native";
 import { colors } from "@/src/ui";
 
-export default function MapScreen() {
+export default function SocialScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Map Screen</Text>
+      <Text style={styles.text}>Social Screen</Text>
     </View>
   );
 }
