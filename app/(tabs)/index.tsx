@@ -1,14 +1,24 @@
-import { useEffect, useState, useRef } from "react";
-import { View, StyleSheet, Alert, TouchableOpacity } from "react-native";
-import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
-import * as Location from "expo-location";
+import { borderRadius, colors, spacing } from "@/src/ui";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/src/ui";
+import * as Location from "expo-location";
+import { useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [location, setLocation] = useState<Location.LocationObject | null>(
+    null,
+  );
   const [isTracking, setIsTracking] = useState(false);
+  const [destination, setDestination] = useState("");
 
   useEffect(() => {
     requestLocationPermission();
@@ -19,7 +29,7 @@ export default function MapScreen() {
     if (status !== "granted") {
       Alert.alert(
         "Permission refusée",
-        "L'accès à la localisation est nécessaire pour utiliser la carte."
+        "L'accès à la localisation est nécessaire pour utiliser la carte.",
       );
       return;
     }
@@ -40,14 +50,20 @@ export default function MapScreen() {
 
   const handlePlayPress = () => {
     if (!location) {
-      Alert.alert("Localisation requise", "Veuillez activer la localisation pour démarrer un trajet.");
+      Alert.alert(
+        "Localisation requise",
+        "Veuillez activer la localisation pour démarrer un trajet.",
+      );
       return;
     }
 
     setIsTracking(!isTracking);
 
     if (!isTracking) {
-      Alert.alert("Trajet démarré", "Votre trajet GPS est en cours d'enregistrement.");
+      Alert.alert(
+        "Trajet démarré",
+        "Votre trajet GPS est en cours d'enregistrement.",
+      );
     } else {
       Alert.alert("Trajet terminé", "Votre trajet a été enregistré.");
     }
@@ -65,7 +81,7 @@ export default function MapScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <MapView
         ref={mapRef}
         style={styles.map}
@@ -83,6 +99,24 @@ export default function MapScreen() {
         }}
       />
 
+      {/* Barre de recherche d'itinéraire */}
+      <View style={styles.searchContainer}>
+        <Ionicons
+          name="search"
+          size={20}
+          color={colors.textTertiary}
+          style={styles.searchIcon}
+        />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Où voulez-vous aller ?"
+          placeholderTextColor={colors.textTertiary}
+          value={destination}
+          onChangeText={setDestination}
+          returnKeyType="search"
+        />
+      </View>
+
       {/* Bouton pour centrer sur l'utilisateur */}
       <TouchableOpacity style={styles.centerButton} onPress={centerOnUser}>
         <Ionicons name="locate" size={24} color={colors.textPrimary} />
@@ -99,14 +133,14 @@ export default function MapScreen() {
           color={colors.textPrimary}
         />
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.backgroundPrimary,
+    backgroundColor: colors.backgroundSecondary,
   },
   map: {
     flex: 1,
@@ -145,5 +179,30 @@ const styles = StyleSheet.create({
   },
   playButtonActive: {
     backgroundColor: colors.danger,
+  },
+  searchContainer: {
+    position: "absolute",
+    top: 60,
+    left: 16,
+    right: 72,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  searchIcon: {
+    marginRight: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    color: colors.textPrimary,
+    fontSize: 16,
   },
 });
