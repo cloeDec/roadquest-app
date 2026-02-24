@@ -18,8 +18,7 @@
         "foregroundImage": "./assets/images/Logo.png"
       },
       "package": "com.roadquest.app",
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "output": "static",
