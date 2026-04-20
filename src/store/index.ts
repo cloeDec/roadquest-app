@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import tripsReducer from "./slices/tripsSlice";
+import poisReducer from "./slices/poisSlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     trips: tripsReducer,
+    pois: poisReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

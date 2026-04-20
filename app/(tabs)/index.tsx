@@ -22,6 +22,15 @@ import {
   saveTripToAPI,
   loadTripsFromAPI,
 } from "@/src/store/slices/tripsSlice";
+import {
+  loadNearbyPOIs,
+  setSelectedPOI,
+  setFilters,
+  getFilteredPOIs,
+  POI,
+} from "@/src/store/slices/poisSlice";
+import { POIMarker, POIFilterBar, POIDetailModal } from "@/src/components/map";
+import { usePOIDetection } from "@/src/hooks/usePOIDetection";
 
 // Clé API OpenRouteService depuis les variables d'environnement
 const OPENROUTE_API_KEY = process.env.EXPO_PUBLIC_OPENROUTE_API_KEY;
@@ -47,6 +56,8 @@ interface Coordinate {
 export default function MapScreen() {
   const dispatch = useAppDispatch();
   const currentTrip = useAppSelector((state) => state.trips.currentTrip);
+  const { filters, selectedPOI } = useAppSelector((state) => state.pois);
+  const filteredPOIs = useAppSelector(getFilteredPOIs);
 
   const mapRef = useRef<MapView>(null);
   const locationSubscription = useRef<Location.LocationSubscription | null>(
@@ -66,6 +77,7 @@ export default function MapScreen() {
     null,
   );
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [showPOIModal, setShowPOIModal] = useState(false);
 
   useEffect(() => {
     requestLocationPermission();
@@ -79,6 +91,24 @@ export default function MapScreen() {
       }
     };
   }, []);
+
+  // Charger les POIs à proximité quand la position change
+  useEffect(() => {
+    if (location) {
+      dispatch(loadNearbyPOIs(
+        location.coords.latitude,
+        location.coords.longitude,
+        filters.maxDistance
+      ) as any);
+    }
+  }, [location, filters.maxDistance]);
+
+  // Détecter automatiquement les POIs visités pendant le trajet
+  usePOIDetection(
+    location?.coords.latitude || null,
+    location?.coords.longitude || null,
+    isTracking
+  );
 
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -402,6 +432,68 @@ export default function MapScreen() {
     }
   };
 
+  // Gérer le filtre des types de POI
+  const handleTypeToggle = (type: string) => {
+    const newTypes = filters.types.includes(type)
+      ? filters.types.filter((t) => t !== type)
+      : [...filters.types, type];
+
+    dispatch(setFilters({ types: newTypes }));
+  };
+
+  // Gérer le filtre "visités uniquement"
+  const handleVisitedOnlyToggle = () => {
+    dispatch(setFilters({ showVisitedOnly: !filters.showVisitedOnly }));
+  };
+
+  // Gérer la sélection d'un POI
+  const handlePOIPress = (poi: POI) => {
+    dispatch(setSelectedPOI(poi));
+    setShowPOIModal(true);
+  };
+
+  // Naviguer vers un POI
+  const handleNavigateToPOI = () => {
+    if (selectedPOI) {
+      const poiCoords = {
+        latitude: selectedPOI.location.latitude,
+        longitude: selectedPOI.location.longitude
+      };
+
+      setDestination(selectedPOI.name);
+      setDestinationCoords(poiCoords);
+      setShowPOIModal(false);
+
+      // Calculer l'itinéraire
+      if (location) {
+        calculateRoute(
+          {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          },
+          poiCoords
+        );
+      }
+
+      // Centrer la carte
+      if (mapRef.current && location) {
+        mapRef.current.fitToCoordinates(
+          [
+            {
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+            },
+            poiCoords,
+          ],
+          {
+            edgePadding: { top: 100, right: 50, bottom: 100, left: 50 },
+            animated: true,
+          }
+        );
+      }
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <MapView
@@ -437,7 +529,27 @@ export default function MapScreen() {
             strokeWidth={4}
           />
         )}
+
+        {/* Marqueurs POI */}
+        {filteredPOIs.map((poi) => (
+          <POIMarker
+            key={poi.poi_id}
+            poi={poi}
+            onPress={() => handlePOIPress(poi)}
+          />
+        ))}
       </MapView>
+
+      {/* Barre de filtres POI */}
+      <View style={styles.poiFilterWrapper}>
+        <POIFilterBar
+          selectedTypes={filters.types}
+          onTypeToggle={handleTypeToggle}
+          showVisitedOnly={filters.showVisitedOnly}
+          onVisitedOnlyToggle={handleVisitedOnlyToggle}
+          poiCount={filteredPOIs.length}
+        />
+      </View>
 
       {/* Barre de recherche d'itinéraire */}
       <View style={styles.searchWrapper}>
@@ -548,6 +660,17 @@ export default function MapScreen() {
           color={colors.textPrimary}
         />
       </TouchableOpacity>
+
+      {/* Modal détails POI */}
+      <POIDetailModal
+        poi={selectedPOI}
+        visible={showPOIModal}
+        onClose={() => {
+          setShowPOIModal(false);
+          dispatch(setSelectedPOI(null));
+        }}
+        onNavigate={handleNavigateToPOI}
+      />
     </SafeAreaView>
   );
 }
@@ -620,6 +743,12 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 16,
     fontWeight: "600",
+  },
+  poiFilterWrapper: {
+    position: "absolute",
+    top: 120,
+    left: 16,
+    right: 16,
   },
   searchWrapper: {
     position: "absolute",
