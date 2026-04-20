@@ -19,8 +19,8 @@ import {
   startTrip,
   addCoordinate,
   endTrip,
-  saveTripsToStorage,
-  loadTripsFromStorage,
+  saveTripToAPI,
+  loadTripsFromAPI,
 } from "@/src/store/slices/tripsSlice";
 
 // Clé API OpenRouteService depuis les variables d'environnement
@@ -69,8 +69,8 @@ export default function MapScreen() {
 
   useEffect(() => {
     requestLocationPermission();
-    // Charger les trajets sauvegardés
-    dispatch(loadTripsFromStorage() as any);
+    // Charger les trajets depuis l'API
+    dispatch(loadTripsFromAPI() as any);
 
     return () => {
       // Nettoyer l'abonnement à la localisation lors du démontage
@@ -204,7 +204,7 @@ export default function MapScreen() {
     );
   };
 
-  const stopNavigation = () => {
+  const stopNavigation = async () => {
     setIsTracking(false);
     setDistanceRemaining(null);
     setTimeRemaining(null);
@@ -212,16 +212,24 @@ export default function MapScreen() {
     // Terminer l'enregistrement du trajet
     dispatch(endTrip());
 
-    // Sauvegarder les trajets dans AsyncStorage
-    const trips = [...(currentTrip ? [currentTrip] : [])];
-    dispatch(saveTripsToStorage(trips) as any);
+    // Sauvegarder le trajet dans la base de données
+    if (currentTrip) {
+      try {
+        await dispatch(saveTripToAPI({
+          ...currentTrip,
+          endTime: Date.now(),
+          isActive: false
+        }) as any);
+        Alert.alert("Guidage arrêté", "Trajet enregistré avec succès dans la base de données !");
+      } catch (error) {
+        Alert.alert("Erreur", "Impossible de sauvegarder le trajet dans la base de données");
+      }
+    }
 
     if (locationSubscription.current) {
       locationSubscription.current.remove();
       locationSubscription.current = null;
     }
-
-    Alert.alert("Guidage arrêté", "Trajet enregistré avec succès !");
   };
 
   // Calculer la distance entre deux points (formule Haversine)
