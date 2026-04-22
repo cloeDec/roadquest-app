@@ -1,8 +1,8 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Text } from "@/src/ui";
-import { colors, spacing } from "@/src/ui";
+import { Text , colors, spacing } from "@/src/ui";
+
 
 interface TripHeaderProps {
   onBack: () => void;

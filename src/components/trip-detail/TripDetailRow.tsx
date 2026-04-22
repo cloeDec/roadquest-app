@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Text } from "@/src/ui";
-import { colors, spacing } from "@/src/ui";
+import { Text , colors, spacing } from "@/src/ui";
+
 
 interface TripDetailRowProps {
   icon: React.ReactNode;

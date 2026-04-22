@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Card, Text } from "@/src/ui";
-import { colors, spacing } from "@/src/ui";
+import { Card, Text , colors, spacing } from "@/src/ui";
+
 
 interface LegendItemProps {
   color: string;

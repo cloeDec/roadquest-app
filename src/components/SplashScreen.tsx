@@ -61,7 +61,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
         <LogoSvg width={120} height={120} style={styles.logo} />
 
         <Text style={styles.title}>RoadQuest</Text>
-        <Text style={styles.subtitle}>L'aventure moto gamifiée</Text>
+        <Text style={styles.subtitle}>L&apos;aventure moto gamifiée</Text>
       </View>
 
       <View style={styles.progressContainer}>
