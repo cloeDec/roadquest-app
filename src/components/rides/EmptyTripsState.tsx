@@ -1,8 +1,8 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Button, Text } from "@/src/ui";
-import { colors, spacing } from "@/src/ui";
+import { Button, Text , colors, spacing } from "@/src/ui";
+
 
 interface EmptyTripsStateProps {
   onStartTrip: () => void;

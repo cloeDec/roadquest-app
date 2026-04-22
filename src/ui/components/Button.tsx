@@ -4,7 +4,6 @@ import {
   TouchableOpacityProps,
   StyleSheet,
   ActivityIndicator,
-  ViewStyle,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Text } from "./Text";
