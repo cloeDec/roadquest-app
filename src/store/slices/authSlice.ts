@@ -2,6 +2,13 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import * as SecureStore from "expo-secure-store";
 import { authService } from "../../services/auth";
 
+interface Motorcycle {
+  brand: string;
+  model: string;
+  year: number;
+  photo_url?: string;
+}
+
 interface User {
   user_id: string;
   email: string;
@@ -9,6 +16,10 @@ interface User {
   avatar_url?: string;
   xp: number;
   level: number;
+  motorcycle?: Motorcycle;
+  total_distance?: number;
+  total_trips?: number;
+  regions_explored?: number;
 }
 
 interface AuthState {
