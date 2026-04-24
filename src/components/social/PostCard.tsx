@@ -4,6 +4,7 @@ import { Text, Caption } from "@/src/ui/components/Text";
 import { Card } from "@/src/ui/components/Card";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius } from "@/src/ui/theme";
+import { formatDistance, formatDurationMinutes, formatRelativeTime } from "@/src/utils";
 import type { RidePost } from "@/src/store/slices/socialSlice";
 
 interface PostCardProps {
@@ -16,32 +17,8 @@ interface PostCardProps {
 export function PostCard({ post, onLike, onComment, onProfilePress }: PostCardProps) {
   const [imageIndex, setImageIndex] = useState(0);
 
-  const formatDistance = (km: number) => {
-    return km >= 100 ? `${Math.round(km)} km` : `${km.toFixed(1)} km`;
-  };
-
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h${mins > 0 ? mins : ''}` : `${mins}min`;
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 60) return `il y a ${diffMins}min`;
-    if (diffHours < 24) return `il y a ${diffHours}h`;
-    if (diffDays < 7) return `il y a ${diffDays}j`;
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-  };
-
   return (
-    <Card variant="elevated" padding="none" style={styles.container}>
+    <Card variant="elevated" style={styles.container}>
       {/* Header */}
       <TouchableOpacity
         style={styles.header}
@@ -62,7 +39,7 @@ export function PostCard({ post, onLike, onComment, onProfilePress }: PostCardPr
               <Caption style={styles.levelText}>{post.author.level}</Caption>
             </View>
           </View>
-          <Caption color="textSecondary">{formatDate(post.created_at)}</Caption>
+          <Caption color="textSecondary">{formatRelativeTime(post.created_at)}</Caption>
         </View>
       </TouchableOpacity>
 
@@ -120,7 +97,7 @@ export function PostCard({ post, onLike, onComment, onProfilePress }: PostCardPr
               size={16}
               color={colors.brandPrimary}
             />
-            <Caption>{formatDistance(post.distance_km)}</Caption>
+            <Caption>{formatDistance(post.distance_km, 1)}</Caption>
           </View>
           <View style={styles.statItem}>
             <MaterialCommunityIcons
@@ -128,7 +105,7 @@ export function PostCard({ post, onLike, onComment, onProfilePress }: PostCardPr
               size={16}
               color={colors.brandPrimary}
             />
-            <Caption>{formatDuration(post.duration_minutes)}</Caption>
+            <Caption>{formatDurationMinutes(post.duration_minutes)}</Caption>
           </View>
         </View>
       </View>
