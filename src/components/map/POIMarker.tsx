@@ -5,47 +5,17 @@ import { Text, Caption } from "@/src/ui/components/Text";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { POI } from "@/src/store/slices/poisSlice";
 import { colors, spacing } from "@/src/ui/theme";
+import { getPOITypeConfig } from "@/src/config";
+
+type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 interface POIMarkerProps {
   poi: POI;
   onPress?: () => void;
 }
 
-const POI_TYPE_CONFIG = {
-  col: {
-    icon: "image-filter-hdr" as const,
-    color: "#4A90E2",
-    label: "Col"
-  },
-  route_panoramique: {
-    icon: "road-variant" as const,
-    color: "#F5A623",
-    label: "Route panoramique"
-  },
-  virage: {
-    icon: "chart-timeline-variant" as const,
-    color: "#E91E63",
-    label: "Virage"
-  },
-  spot_photo: {
-    icon: "camera" as const,
-    color: "#9C27B0",
-    label: "Spot photo"
-  },
-  monument: {
-    icon: "castle" as const,
-    color: "#795548",
-    label: "Monument"
-  },
-  autre: {
-    icon: "map-marker" as const,
-    color: "#607D8B",
-    label: "Autre"
-  }
-};
-
 export function POIMarker({ poi, onPress }: POIMarkerProps) {
-  const config = POI_TYPE_CONFIG[poi.type];
+  const config = getPOITypeConfig(poi.type);
   const isVisited = poi.visited || false;
 
   return (
@@ -63,7 +33,7 @@ export function POIMarker({ poi, onPress }: POIMarkerProps) {
         { backgroundColor: isVisited ? colors.success : config.color }
       ]}>
         <MaterialCommunityIcons
-          name={config.icon}
+          name={config.icon as IconName}
           size={20}
           color="#FFFFFF"
         />
@@ -82,7 +52,7 @@ export function POIMarker({ poi, onPress }: POIMarkerProps) {
         <View style={styles.calloutContainer}>
           <View style={styles.calloutHeader}>
             <MaterialCommunityIcons
-              name={config.icon}
+              name={config.icon as IconName}
               size={24}
               color={config.color}
             />

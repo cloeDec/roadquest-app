@@ -1,8 +1,8 @@
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Card, Text , colors, spacing } from "@/src/ui";
-
+import { Card, Text, colors, spacing } from "@/src/ui";
+import { formatDateShort, formatTime, formatDurationSeconds } from "@/src/utils";
 import { Trip } from "@/src/store/slices/tripsSlice";
 
 interface TripCardProps {
@@ -12,33 +12,6 @@ interface TripCardProps {
 }
 
 export function TripCard({ trip, onPress, onDelete }: TripCardProps) {
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}min`;
-    }
-    return `${minutes}min`;
-  };
-
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.container}>
       <Card variant="elevated" padding="md">
@@ -51,7 +24,7 @@ export function TripCard({ trip, onPress, onDelete }: TripCardProps) {
               {trip.destination?.name || "Destination inconnue"}
             </Text>
             <Text variant="small" color="textTertiary">
-              {formatDate(trip.startTime)} à {formatTime(trip.startTime)}
+              {formatDateShort(trip.startTime)} à {formatTime(trip.startTime)}
             </Text>
           </View>
           <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
@@ -70,7 +43,7 @@ export function TripCard({ trip, onPress, onDelete }: TripCardProps) {
           <View style={styles.statItem}>
             <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textTertiary} />
             <Text variant="small" bold style={styles.statText}>
-              {formatDuration(trip.duration)}
+              {formatDurationSeconds(trip.duration)}
             </Text>
           </View>
           <View style={styles.statDivider} />

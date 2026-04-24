@@ -1,27 +1,11 @@
-import { borderRadius, colors, spacing } from "@/src/ui";
-import { Ionicons } from "@expo/vector-icons";
-import * as Location from "expo-location";
-import { useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  FlatList,
-  Keyboard,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { Alert, StyleSheet, View } from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as Location from "expo-location";
+import { colors, spacing } from "@/src/ui/theme";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import {
-  startTrip,
-  addCoordinate,
-  endTrip,
-  saveTripToAPI,
-  loadTripsFromAPI,
-} from "@/src/store/slices/tripsSlice";
+import { loadTripsFromAPI } from "@/src/store/slices/tripsSlice";
 import {
   loadNearbyPOIs,
   setSelectedPOI,
@@ -29,70 +13,77 @@ import {
   getFilteredPOIs,
   POI,
 } from "@/src/store/slices/poisSlice";
-import { POIMarker, POIFilterBar, POIDetailModal } from "@/src/components/map";
-import { usePOIDetection } from "@/src/hooks/usePOIDetection";
-
-// Clé API OpenRouteService depuis les variables d'environnement
-const OPENROUTE_API_KEY = process.env.EXPO_PUBLIC_OPENROUTE_API_KEY;
-
-interface PlaceSuggestion {
-  properties: {
-    id: string;
-    name: string;
-    label: string;
-    country: string;
-    locality?: string;
-  };
-  geometry: {
-    coordinates: [number, number]; // [longitude, latitude]
-  };
-}
-
-interface Coordinate {
-  latitude: number;
-  longitude: number;
-}
+import {
+  POIMarker,
+  POIFilterBar,
+  POIDetailModal,
+  SearchBar,
+  NavigationInfo,
+  MapButton,
+} from "@/src/components/map";
+import { usePOIDetection, useNavigation, useRouteSearch } from "@/src/hooks";
 
 export default function MapScreen() {
   const dispatch = useAppDispatch();
-  const currentTrip = useAppSelector((state) => state.trips.currentTrip);
   const { filters, selectedPOI } = useAppSelector((state) => state.pois);
   const filteredPOIs = useAppSelector(getFilteredPOIs);
 
   const mapRef = useRef<MapView>(null);
-  const locationSubscription = useRef<Location.LocationSubscription | null>(
-    null,
-  );
-  const [location, setLocation] = useState<Location.LocationObject | null>(
-    null,
-  );
-  const [isTracking, setIsTracking] = useState(false);
-  const [destination, setDestination] = useState("");
-  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [destinationCoords, setDestinationCoords] =
-    useState<Coordinate | null>(null);
-  const [routeCoordinates, setRouteCoordinates] = useState<Coordinate[]>([]);
-  const [distanceRemaining, setDistanceRemaining] = useState<number | null>(
-    null,
-  );
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [showPOIModal, setShowPOIModal] = useState(false);
 
-  useEffect(() => {
-    requestLocationPermission();
-    // Charger les trajets depuis l'API
-    dispatch(loadTripsFromAPI() as any);
+  // Hooks personnalisés
+  const {
+    destination,
+    suggestions,
+    showSuggestions,
+    destinationCoords,
+    routeCoordinates,
+    searchPlaces,
+    selectPlace,
+    setDestinationDirect,
+    clearSearch,
+  } = useRouteSearch();
 
-    return () => {
-      // Nettoyer l'abonnement à la localisation lors du démontage
-      if (locationSubscription.current) {
-        locationSubscription.current.remove();
-      }
-    };
+  const handleLocationUpdate = useCallback((newLocation: Location.LocationObject) => {
+    setLocation(newLocation);
+    if (mapRef.current) {
+      mapRef.current.animateToRegion({
+        latitude: newLocation.coords.latitude,
+        longitude: newLocation.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+    }
   }, []);
 
-  // Charger les POIs à proximité quand la position change
+  const handleArrival = useCallback(() => {
+    stopNavigation();
+    Alert.alert("Arrivée", "Vous êtes arrivé à destination !");
+  }, []);
+
+  const {
+    isTracking,
+    distanceRemaining,
+    timeRemaining,
+    startNavigation,
+    stopNavigation,
+  } = useNavigation(location, destinationCoords, handleLocationUpdate, handleArrival);
+
+  // Détection POI
+  usePOIDetection(
+    location?.coords.latitude || null,
+    location?.coords.longitude || null,
+    isTracking
+  );
+
+  // Initialisation
+  useEffect(() => {
+    requestLocationPermission();
+    dispatch(loadTripsFromAPI() as any);
+  }, []);
+
+  // Charger POIs à proximité
   useEffect(() => {
     if (location) {
       dispatch(loadNearbyPOIs(
@@ -103,27 +94,16 @@ export default function MapScreen() {
     }
   }, [location, filters.maxDistance]);
 
-  // Détecter automatiquement les POIs visités pendant le trajet
-  usePOIDetection(
-    location?.coords.latitude || null,
-    location?.coords.longitude || null,
-    isTracking
-  );
-
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Permission refusée",
-        "L'accès à la localisation est nécessaire pour utiliser la carte.",
-      );
+      Alert.alert("Permission refusée", "L'accès à la localisation est nécessaire.");
       return;
     }
 
     const currentLocation = await Location.getCurrentPositionAsync({});
     setLocation(currentLocation);
 
-    // Centrer la carte sur la position actuelle
     if (mapRef.current) {
       mapRef.current.animateToRegion({
         latitude: currentLocation.coords.latitude,
@@ -136,150 +116,20 @@ export default function MapScreen() {
 
   const handlePlayPress = async () => {
     if (!location) {
-      Alert.alert(
-        "Localisation requise",
-        "Veuillez activer la localisation pour démarrer un trajet.",
-      );
+      Alert.alert("Localisation requise", "Veuillez activer la localisation.");
       return;
     }
 
     if (!destinationCoords) {
-      Alert.alert(
-        "Destination requise",
-        "Veuillez d'abord sélectionner une destination.",
-      );
+      Alert.alert("Destination requise", "Veuillez sélectionner une destination.");
       return;
     }
 
     if (!isTracking) {
-      // Démarrer le guidage
-      startNavigation();
+      await startNavigation(destination, destinationCoords, routeCoordinates);
     } else {
-      // Arrêter le guidage
-      stopNavigation();
+      await stopNavigation();
     }
-  };
-
-  const startNavigation = async () => {
-    setIsTracking(true);
-
-    // Démarrer l'enregistrement du trajet dans Redux
-    dispatch(
-      startTrip({
-        destination: destinationCoords
-          ? {
-              name: destination,
-              latitude: destinationCoords.latitude,
-              longitude: destinationCoords.longitude,
-            }
-          : null,
-        routeCoordinates: routeCoordinates.map((coord) => ({
-          ...coord,
-          timestamp: Date.now(),
-        })),
-      }),
-    );
-
-    Alert.alert("Guidage démarré", "Navigation en cours vers votre destination.");
-
-    // Démarrer le suivi en temps réel de la position
-    locationSubscription.current = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.BestForNavigation,
-        timeInterval: 1000, // Mise à jour toutes les secondes
-        distanceInterval: 5, // Mise à jour tous les 5 mètres
-      },
-      (newLocation) => {
-        setLocation(newLocation);
-
-        // Enregistrer la position dans Redux
-        dispatch(
-          addCoordinate({
-            latitude: newLocation.coords.latitude,
-            longitude: newLocation.coords.longitude,
-          }),
-        );
-
-        // Calculer la distance restante
-        if (destinationCoords) {
-          const distance = calculateDistance(
-            newLocation.coords.latitude,
-            newLocation.coords.longitude,
-            destinationCoords.latitude,
-            destinationCoords.longitude,
-          );
-          setDistanceRemaining(distance);
-
-          // Estimer le temps restant (vitesse moyenne : 50 km/h)
-          const timeInMinutes = (distance / 50) * 60;
-          setTimeRemaining(timeInMinutes);
-
-          // Vérifier si on est arrivé (moins de 50 mètres)
-          if (distance < 0.05) {
-            stopNavigation();
-            Alert.alert("Arrivée", "Vous êtes arrivé à destination !");
-          }
-
-          // Centrer la carte sur la position actuelle
-          if (mapRef.current) {
-            mapRef.current.animateToRegion({
-              latitude: newLocation.coords.latitude,
-              longitude: newLocation.coords.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            });
-          }
-        }
-      },
-    );
-  };
-
-  const stopNavigation = async () => {
-    setIsTracking(false);
-    setDistanceRemaining(null);
-    setTimeRemaining(null);
-
-    // Terminer l'enregistrement du trajet
-    dispatch(endTrip());
-
-    // Sauvegarder le trajet dans la base de données
-    if (currentTrip) {
-      try {
-        await dispatch(saveTripToAPI({
-          ...currentTrip,
-          endTime: Date.now(),
-          isActive: false
-        }) as any);
-        Alert.alert("Guidage arrêté", "Trajet enregistré avec succès dans la base de données !");
-      } catch (error) {
-        Alert.alert("Erreur", "Impossible de sauvegarder le trajet dans la base de données");
-      }
-    }
-
-    if (locationSubscription.current) {
-      locationSubscription.current.remove();
-      locationSubscription.current = null;
-    }
-  };
-
-  // Calculer la distance entre deux points (formule Haversine)
-  const calculateDistance = (
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number,
-  ): number => {
-    const R = 6371; // Rayon de la Terre en km
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance en km
   };
 
   const centerOnUser = () => {
@@ -293,202 +143,62 @@ export default function MapScreen() {
     }
   };
 
-  // Recherche de lieux avec OpenRouteService Geocoding
-  const searchPlaces = async (text: string) => {
-    setDestination(text);
-
-    if (text.length < 3) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `https://api.openrouteservice.org/geocode/autocomplete?api_key=${OPENROUTE_API_KEY}&text=${encodeURIComponent(
-          text,
-        )}&boundary.country=FR&size=5`,
-        {
-          headers: {
-            Accept: "application/json",
-          },
-        },
-      );
-      const data = await response.json();
-
-      if (data.features && data.features.length > 0) {
-        setSuggestions(data.features);
-        setShowSuggestions(true);
-      } else {
-        setSuggestions([]);
-        setShowSuggestions(false);
-      }
-    } catch (error) {
-      console.error("Erreur lors de la recherche:", error);
-      Alert.alert("Erreur", "Impossible de rechercher des adresses.");
-    }
-  };
-
-  // Sélection d'un lieu
-  const selectPlace = async (place: PlaceSuggestion) => {
-    setDestination(place.properties.label);
-    setShowSuggestions(false);
-    Keyboard.dismiss();
-
-    const coords = {
-      latitude: place.geometry.coordinates[1],
-      longitude: place.geometry.coordinates[0],
-    };
-
-    setDestinationCoords(coords);
-
-    // Calculer l'itinéraire
+  const handlePlaceSelect = async (place: any) => {
     if (location) {
-      await calculateRoute(
-        {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        },
-        coords,
-      );
-    }
+      await selectPlace(place, {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
 
-    // Centrer la carte pour afficher l'itinéraire
-    if (mapRef.current && location) {
-      mapRef.current.fitToCoordinates(
-        [
-          {
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-          },
-          coords,
-        ],
-        {
-          edgePadding: { top: 100, right: 50, bottom: 100, left: 50 },
-          animated: true,
-        },
-      );
+      if (mapRef.current) {
+        mapRef.current.fitToCoordinates(
+          [
+            { latitude: location.coords.latitude, longitude: location.coords.longitude },
+            { latitude: place.geometry.coordinates[1], longitude: place.geometry.coordinates[0] },
+          ],
+          { edgePadding: { top: 100, right: 50, bottom: 100, left: 50 }, animated: true }
+        );
+      }
     }
   };
 
-  // Calculer l'itinéraire avec OpenRouteService Directions
-  const calculateRoute = async (origin: Coordinate, destination: Coordinate) => {
-    try {
-      const response = await fetch(
-        "https://api.openrouteservice.org/v2/directions/driving-car/geojson",
-        {
-          method: "POST",
-          headers: {
-            Accept: "application/json, application/geo+json",
-            Authorization: OPENROUTE_API_KEY || "",
-            "Content-Type": "application/json; charset=utf-8",
-          },
-          body: JSON.stringify({
-            coordinates: [
-              [origin.longitude, origin.latitude],
-              [destination.longitude, destination.latitude],
-            ],
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (data.error) {
-        console.error("Erreur API:", data.error);
-        Alert.alert("Erreur API", JSON.stringify(data.error));
-        return;
-      }
-
-      if (data.features && data.features.length > 0) {
-        const route = data.features[0].geometry.coordinates;
-
-        const routeCoords: Coordinate[] = route.map(
-          (coord: [number, number]) => ({
-            latitude: coord[1],
-            longitude: coord[0],
-          }),
-        );
-        setRouteCoordinates(routeCoords);
-
-        // Afficher les informations sur l'itinéraire
-        const distance = (
-          data.features[0].properties.summary.distance / 1000
-        ).toFixed(1);
-        const duration = Math.round(
-          data.features[0].properties.summary.duration / 60,
-        );
-        Alert.alert(
-          "Itinéraire calculé",
-          `Distance: ${distance} km\nDurée estimée: ${duration} min`,
-        );
-      } else {
-        console.error("Pas de route trouvée dans la réponse");
-        Alert.alert("Erreur", "Aucun itinéraire trouvé.");
-      }
-    } catch (error) {
-      console.error("Erreur lors du calcul de l'itinéraire:", error);
-      Alert.alert("Erreur", `Impossible de calculer l'itinéraire: ${error}`);
-    }
-  };
-
-  // Gérer le filtre des types de POI
   const handleTypeToggle = (type: string) => {
     const newTypes = filters.types.includes(type)
       ? filters.types.filter((t) => t !== type)
       : [...filters.types, type];
-
     dispatch(setFilters({ types: newTypes }));
   };
 
-  // Gérer le filtre "visités uniquement"
   const handleVisitedOnlyToggle = () => {
     dispatch(setFilters({ showVisitedOnly: !filters.showVisitedOnly }));
   };
 
-  // Gérer la sélection d'un POI
   const handlePOIPress = (poi: POI) => {
     dispatch(setSelectedPOI(poi));
     setShowPOIModal(true);
   };
 
-  // Naviguer vers un POI
-  const handleNavigateToPOI = () => {
-    if (selectedPOI) {
+  const handleNavigateToPOI = async () => {
+    if (selectedPOI && location) {
       const poiCoords = {
         latitude: selectedPOI.location.latitude,
-        longitude: selectedPOI.location.longitude
+        longitude: selectedPOI.location.longitude,
       };
 
-      setDestination(selectedPOI.name);
-      setDestinationCoords(poiCoords);
+      await setDestinationDirect(selectedPOI.name, poiCoords, {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
       setShowPOIModal(false);
 
-      // Calculer l'itinéraire
-      if (location) {
-        calculateRoute(
-          {
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-          },
-          poiCoords
-        );
-      }
-
-      // Centrer la carte
-      if (mapRef.current && location) {
+      if (mapRef.current) {
         mapRef.current.fitToCoordinates(
           [
-            {
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            },
+            { latitude: location.coords.latitude, longitude: location.coords.longitude },
             poiCoords,
           ],
-          {
-            edgePadding: { top: 100, right: 50, bottom: 100, left: 50 },
-            animated: true,
-          }
+          { edgePadding: { top: 100, right: 50, bottom: 100, left: 50 }, animated: true }
         );
       }
     }
@@ -500,9 +210,9 @@ export default function MapScreen() {
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
-        showsUserLocation={true}
+        showsUserLocation
         showsMyLocationButton={false}
-        followsUserLocation={true}
+        followsUserLocation
         userLocationPriority="high"
         userInterfaceStyle="dark"
         initialRegion={{
@@ -512,7 +222,6 @@ export default function MapScreen() {
           longitudeDelta: 0.05,
         }}
       >
-        {/* Marqueur de destination */}
         {destinationCoords && (
           <Marker
             coordinate={destinationCoords}
@@ -521,7 +230,6 @@ export default function MapScreen() {
           />
         )}
 
-        {/* Tracé de l'itinéraire */}
         {routeCoordinates.length > 0 && (
           <Polyline
             coordinates={routeCoordinates}
@@ -530,7 +238,6 @@ export default function MapScreen() {
           />
         )}
 
-        {/* Marqueurs POI */}
         {filteredPOIs.map((poi) => (
           <POIMarker
             key={poi.poi_id}
@@ -540,8 +247,7 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {/* Barre de filtres POI */}
-      <View style={styles.poiFilterWrapper}>
+      <View style={styles.filterWrapper}>
         <POIFilterBar
           selectedTypes={filters.types}
           onTypeToggle={handleTypeToggle}
@@ -551,117 +257,36 @@ export default function MapScreen() {
         />
       </View>
 
-      {/* Barre de recherche d'itinéraire */}
-      <View style={styles.searchWrapper}>
-        <View style={styles.searchContainer}>
-          <Ionicons
-            name="search"
-            size={20}
-            color={colors.textTertiary}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Où voulez-vous aller ?"
-            placeholderTextColor={colors.textTertiary}
-            value={destination}
-            onChangeText={searchPlaces}
-            returnKeyType="search"
-          />
-          {destination.length > 0 && (
-            <TouchableOpacity
-              onPress={() => {
-                setDestination("");
-                setSuggestions([]);
-                setShowSuggestions(false);
-                setDestinationCoords(null);
-                setRouteCoordinates([]);
-              }}
-            >
-              <Ionicons
-                name="close-circle"
-                size={20}
-                color={colors.textTertiary}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
+      <SearchBar
+        value={destination}
+        onChangeText={searchPlaces}
+        suggestions={suggestions}
+        showSuggestions={showSuggestions}
+        onSelectPlace={handlePlaceSelect}
+        onClear={clearSearch}
+      />
 
-        {/* Liste des suggestions */}
-        {showSuggestions && suggestions.length > 0 && (
-          <View style={styles.suggestionsContainer}>
-            <FlatList
-              data={suggestions}
-              keyExtractor={(item) => item.properties.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.suggestionItem}
-                  onPress={() => selectPlace(item)}
-                >
-                  <Ionicons
-                    name="location-outline"
-                    size={20}
-                    color={colors.textTertiary}
-                    style={styles.suggestionIcon}
-                  />
-                  <View style={styles.suggestionText}>
-                    <Text style={styles.suggestionMainText}>
-                      {item.properties.name}
-                    </Text>
-                    <Text style={styles.suggestionSecondaryText}>
-                      {item.properties.locality
-                        ? `${item.properties.locality}, ${item.properties.country}`
-                        : item.properties.country}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-              style={styles.suggestionsList}
-            />
-          </View>
-        )}
-      </View>
+      <MapButton
+        icon="locate"
+        onPress={centerOnUser}
+        style={styles.centerButton}
+      />
 
-      {/* Bouton pour centrer sur l'utilisateur */}
-      <TouchableOpacity style={styles.centerButton} onPress={centerOnUser}>
-        <Ionicons name="locate" size={24} color={colors.textPrimary} />
-      </TouchableOpacity>
-
-      {/* Informations de navigation */}
       {isTracking && distanceRemaining !== null && timeRemaining !== null && (
-        <View style={styles.navigationInfo}>
-          <View style={styles.infoRow}>
-            <Ionicons name="navigate" size={20} color={colors.accentPrimary} />
-            <Text style={styles.infoText}>
-              {distanceRemaining < 1
-                ? `${(distanceRemaining * 1000).toFixed(0)} m`
-                : `${distanceRemaining.toFixed(1)} km`}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="time" size={20} color={colors.accentPrimary} />
-            <Text style={styles.infoText}>
-              {timeRemaining < 1
-                ? "< 1 min"
-                : `${Math.round(timeRemaining)} min`}
-            </Text>
-          </View>
-        </View>
+        <NavigationInfo
+          distanceRemaining={distanceRemaining}
+          timeRemaining={timeRemaining}
+        />
       )}
 
-      {/* Bouton Play/Stop */}
-      <TouchableOpacity
-        style={[styles.playButton, isTracking && styles.playButtonActive]}
+      <MapButton
+        icon={isTracking ? "stop" : "play"}
         onPress={handlePlayPress}
-      >
-        <Ionicons
-          name={isTracking ? "stop" : "play"}
-          size={32}
-          color={colors.textPrimary}
-        />
-      </TouchableOpacity>
+        variant={isTracking ? "danger" : "primary"}
+        size="large"
+        style={styles.playButton}
+      />
 
-      {/* Modal détails POI */}
       <POIDetailModal
         poi={selectedPOI}
         visible={showPOIModal}
@@ -683,136 +308,20 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
+  filterWrapper: {
+    position: "absolute",
+    top: 120,
+    left: spacing.md,
+    right: spacing.md,
+  },
   centerButton: {
     position: "absolute",
     top: 60,
-    right: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    right: spacing.md,
   },
   playButton: {
     position: "absolute",
     bottom: 40,
     alignSelf: "center",
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.accentPrimary,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  playButtonActive: {
-    backgroundColor: colors.danger,
-  },
-  navigationInfo: {
-    position: "absolute",
-    bottom: 130,
-    alignSelf: "center",
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    flexDirection: "row",
-    gap: spacing.lg,
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  infoText: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  poiFilterWrapper: {
-    position: "absolute",
-    top: 120,
-    left: 16,
-    right: 16,
-  },
-  searchWrapper: {
-    position: "absolute",
-    top: 60,
-    left: 16,
-    right: 72,
-  },
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  searchIcon: {
-    marginRight: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
-  suggestionsContainer: {
-    marginTop: spacing.xs,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.md,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    maxHeight: 300,
-  },
-  suggestionsList: {
-    flexGrow: 0,
-  },
-  suggestionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.backgroundPrimary,
-  },
-  suggestionIcon: {
-    marginRight: spacing.sm,
-  },
-  suggestionText: {
-    flex: 1,
-  },
-  suggestionMainText: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  suggestionSecondaryText: {
-    color: colors.textTertiary,
-    fontSize: 14,
-    marginTop: 2,
   },
 });
