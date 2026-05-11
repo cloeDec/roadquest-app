@@ -31,15 +31,12 @@ export default function SocialScreen() {
   };
 
   const handleComment = (postId: string) => {
-    console.log("Open comments for post:", postId);
   };
 
   const handleProfilePress = (userId: string) => {
-    console.log("Open profile:", userId);
   };
 
   const handleCreatePost = () => {
-    console.log("Create new post");
   };
 
   const renderFeedContent = () => {

@@ -194,12 +194,11 @@ export const {
 export const loadFeed = () => async (dispatch: any) => {
   try {
     dispatch(setLoading(true));
-    // TODO: Implémenter l'appel API
+
     // const response = await api.get("/api/social/feed");
     // dispatch(setFeed(response.data.posts));
     dispatch(setLoading(false));
   } catch (error: any) {
-    console.error("Erreur lors du chargement du feed:", error);
     dispatch(setError("Erreur lors du chargement du feed"));
   }
 };
@@ -207,12 +206,11 @@ export const loadFeed = () => async (dispatch: any) => {
 export const loadPublicProfile = (userId: string) => async (dispatch: any) => {
   try {
     dispatch(setLoading(true));
-    // TODO: Implémenter l'appel API
+
     // const response = await api.get(`/api/social/users/${userId}`);
     // dispatch(setPublicProfile(response.data.profile));
     dispatch(setLoading(false));
   } catch (error: any) {
-    console.error("Erreur lors du chargement du profil:", error);
     dispatch(setError("Erreur lors du chargement du profil"));
   }
 };
@@ -220,12 +218,11 @@ export const loadPublicProfile = (userId: string) => async (dispatch: any) => {
 export const loadSharedRoutes = () => async (dispatch: any) => {
   try {
     dispatch(setLoading(true));
-    // TODO: Implémenter l'appel API
+
     // const response = await api.get("/api/social/routes");
     // dispatch(setSharedRoutes(response.data.routes));
     dispatch(setLoading(false));
   } catch (error: any) {
-    console.error("Erreur lors du chargement des routes:", error);
     dispatch(setError("Erreur lors du chargement des routes"));
   }
 };

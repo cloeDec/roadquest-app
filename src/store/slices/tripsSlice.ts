@@ -155,12 +155,10 @@ export const saveTripToAPI = (trip: Trip) => async (dispatch: any) => {
       is_public: true
     });
 
-    console.log("✅ Trajet sauvegardé dans la BDD:", response.data);
 
     // Recharger tous les trajets depuis l'API
     dispatch(loadTripsFromAPI());
   } catch (error: any) {
-    console.error("❌ Erreur lors de la sauvegarde du trajet:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -191,9 +189,7 @@ export const loadTripsFromAPI = () => async (dispatch: any) => {
     }));
 
     dispatch(loadTrips(trips));
-    console.log("✅ Trajets chargés depuis la BDD:", trips.length);
   } catch (error: any) {
-    console.error("❌ Erreur lors du chargement des trajets:", error.response?.data || error.message);
   }
 };
 
@@ -201,16 +197,13 @@ export const deleteTripFromAPI = (tripId: string) => async (dispatch: any) => {
   try {
     await api.delete(`/api/rides/${tripId}`);
     dispatch(deleteTrip(tripId));
-    console.log("✅ Trajet supprimé de la BDD");
   } catch (error: any) {
-    console.error("❌ Erreur lors de la suppression du trajet:", error.response?.data || error.message);
     throw error;
   }
 };
 
 // Garder pour la compatibilité (ne fait rien maintenant)
 export const saveTripsToStorage = (trips: Trip[]) => async () => {
-  console.log("⚠️ saveTripsToStorage is deprecated, use saveTripToAPI instead");
 };
 
 export const loadTripsFromStorage = loadTripsFromAPI;
