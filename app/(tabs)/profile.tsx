@@ -4,7 +4,9 @@ import { Button, Caption, Section, MenuItem, MenuList, Icon } from "@/src/ui";
 import { colors, spacing } from "@/src/ui/theme";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { logoutUser } from "@/src/store/slices/authSlice";
+import { loadAchievements, loadUserAchievements } from "@/src/store/slices/achievementsSlice";
 import { useRouter } from "expo-router";
+import { useEffect } from "react";
 import {
   ProfileHeader,
   MotorcycleCard,
@@ -19,20 +21,39 @@ export default function ProfileScreen() {
   const { user: reduxUser } = useAppSelector((state) => state.auth);
   const { stats: achievementStats } = useAppSelector((state) => state.achievements);
 
+  // Mode démo explicite : si personne n'est connecté, on affiche un profil
+  // fictif clairement signalé par le bandeau "Mode démo" plus bas, plutôt
+  // que de bloquer l'écran. Dès qu'un vrai utilisateur est connecté, aucune
+  // valeur de cet objet mockUser n'est plus utilisée.
   const user = reduxUser || mockUser;
+
+  // Ne recharger les achievements que si on a un vrai utilisateur connecté
+  // et qu'ils n'ont pas déjà été chargés (ex: depuis l'onglet Trophées).
+  useEffect(() => {
+    if (reduxUser) {
+      dispatch(loadAchievements() as any);
+      dispatch(loadUserAchievements() as any);
+    }
+  }, [reduxUser, dispatch]);
 
   const currentLevel = user.level || 8;
   const currentXP = user.xp || 1250;
   const nextLevelXP = Math.floor(100 * Math.pow(currentLevel + 1, 1.5));
 
-  const poisDiscovered = reduxUser ? 12 : mockUser.pois_discovered;
+  // pois_discovered vient maintenant réellement de l'API (/api/user/profile)
+  // pour un utilisateur connecté ; plus de valeur figée à 12.
+  const poisDiscovered = reduxUser
+    ? (reduxUser as any).pois_discovered ?? 0
+    : mockUser.pois_discovered;
+
+  const trophiesUnlocked = reduxUser ? achievementStats.unlocked : 3;
 
   const stats = [
     { icon: "road-variant" as const, iconColor: "success" as const, value: user.total_distance || 2340, label: "km totaux" },
     { icon: "map-marker-path" as const, iconColor: "brandPrimary" as const, value: user.total_trips || 42, label: "trajets" },
     { icon: "map" as const, iconColor: "error" as const, value: user.regions_explored || 5, label: "régions" },
     { icon: "map-marker-star" as const, iconColor: "warning" as const, value: poisDiscovered, label: "POIs" },
-    { icon: "trophy" as const, iconColor: "rankDiamond" as const, value: achievementStats.unlocked || 3, label: "trophées" },
+    { icon: "trophy" as const, iconColor: "rankDiamond" as const, value: trophiesUnlocked, label: "trophées" },
     { icon: "star" as const, iconColor: "warning" as const, value: currentXP, label: "XP total" },
   ];
 

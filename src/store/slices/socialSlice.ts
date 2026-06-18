@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../index";
+import api from "../../services/api";
 
 export interface Author {
   user_id: string;
@@ -195,11 +196,73 @@ export const loadFeed = () => async (dispatch: any) => {
   try {
     dispatch(setLoading(true));
 
-    // const response = await api.get("/api/social/feed");
-    // dispatch(setFeed(response.data.posts));
-    dispatch(setLoading(false));
+    const response = await api.get("/api/social/feed");
+    dispatch(setFeed(response.data.posts));
   } catch (error: any) {
     dispatch(setError("Erreur lors du chargement du feed"));
+  }
+};
+
+export const sharePost = (rideId: string, title: string, description?: string) => async (dispatch: any) => {
+  try {
+    const response = await api.post("/api/social/posts", {
+      ride_id: rideId,
+      title,
+      description,
+    });
+    dispatch(addPost(response.data.post));
+    return response.data.post;
+  } catch (error: any) {
+    dispatch(setError("Erreur lors du partage du trajet"));
+    throw error;
+  }
+};
+
+export const likePost = (postId: string) => async (dispatch: any) => {
+  // Optimistic update : on bascule l'UI tout de suite, et on resynchronise
+  // silencieusement si l'appel serveur échoue.
+  dispatch(toggleLike(postId));
+  try {
+    await api.post(`/api/social/posts/${postId}/like`);
+  } catch (error: any) {
+    dispatch(toggleLike(postId)); // rollback
+    dispatch(setError("Erreur lors du like"));
+  }
+};
+
+export const loadComments = (postId: string) => async (dispatch: any) => {
+  try {
+    const response = await api.get(`/api/social/posts/${postId}/comments`);
+    dispatch(setComments({ postId, comments: response.data.comments }));
+  } catch (error: any) {
+    dispatch(setError("Erreur lors du chargement des commentaires"));
+  }
+};
+
+export const postComment = (postId: string, content: string) => async (dispatch: any) => {
+  try {
+    const response = await api.post(`/api/social/posts/${postId}/comments`, { content });
+    dispatch(addComment(response.data.comment));
+  } catch (error: any) {
+    dispatch(setError("Erreur lors de l'ajout du commentaire"));
+  }
+};
+
+export const follow = (userId: string) => async (dispatch: any) => {
+  try {
+    await api.post(`/api/social/users/${userId}/follow`);
+    dispatch(followUser(userId));
+  } catch (error: any) {
+    dispatch(setError("Erreur lors du follow"));
+  }
+};
+
+export const unfollow = (userId: string) => async (dispatch: any) => {
+  try {
+    await api.delete(`/api/social/users/${userId}/follow`);
+    dispatch(unfollowUser(userId));
+  } catch (error: any) {
+    dispatch(setError("Erreur lors du unfollow"));
   }
 };
 
@@ -207,9 +270,8 @@ export const loadPublicProfile = (userId: string) => async (dispatch: any) => {
   try {
     dispatch(setLoading(true));
 
-    // const response = await api.get(`/api/social/users/${userId}`);
-    // dispatch(setPublicProfile(response.data.profile));
-    dispatch(setLoading(false));
+    const response = await api.get(`/api/social/users/${userId}`);
+    dispatch(setPublicProfile(response.data.profile));
   } catch (error: any) {
     dispatch(setError("Erreur lors du chargement du profil"));
   }
@@ -219,8 +281,8 @@ export const loadSharedRoutes = () => async (dispatch: any) => {
   try {
     dispatch(setLoading(true));
 
-    // const response = await api.get("/api/social/routes");
-    // dispatch(setSharedRoutes(response.data.routes));
+    const response = await api.get("/api/social/routes");
+    dispatch(setSharedRoutes(response.data.routes));
     dispatch(setLoading(false));
   } catch (error: any) {
     dispatch(setError("Erreur lors du chargement des routes"));

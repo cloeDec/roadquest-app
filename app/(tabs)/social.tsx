@@ -4,9 +4,8 @@ import { ScreenHeader, TabBar, EmptyState, FAB, Column } from "@/src/ui";
 import { colors, spacing } from "@/src/ui/theme";
 import { PostCard } from "@/src/components/social";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { toggleLike } from "@/src/store/slices/socialSlice";
-import { useState } from "react";
-import { mockFeed } from "@/src/mocks";
+import { loadFeed, likePost } from "@/src/store/slices/socialSlice";
+import { useState, useEffect, useCallback } from "react";
 
 const TABS = [
   { key: "feed", label: "Fil d'actualité", icon: "home" as const },
@@ -15,19 +14,22 @@ const TABS = [
 
 export default function SocialScreen() {
   const dispatch = useAppDispatch();
-  const { feed } = useAppSelector((state) => state.social);
+  const { feed, isLoading } = useAppSelector((state) => state.social);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("feed");
 
-  const displayFeed = feed.length > 0 ? feed : mockFeed;
+  useEffect(() => {
+    dispatch(loadFeed() as any);
+  }, [dispatch]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  };
+    await dispatch(loadFeed() as any);
+    setRefreshing(false);
+  }, [dispatch]);
 
   const handleLike = (postId: string) => {
-    dispatch(toggleLike(postId));
+    dispatch(likePost(postId) as any);
   };
 
   const handleComment = (postId: string) => {
@@ -40,17 +42,17 @@ export default function SocialScreen() {
   };
 
   const renderFeedContent = () => {
-    if (displayFeed.length === 0) {
+    if (feed.length === 0) {
       return (
         <EmptyState
           icon="account-group-outline"
-          title="Aucune publication"
-          description="Suivez d'autres riders pour voir leurs balades"
+          title={isLoading ? "Chargement..." : "Aucune publication"}
+          description="Suivez d'autres riders pour voir leurs balades, ou terminez une sortie et partagez-la depuis son détail."
         />
       );
     }
 
-    return displayFeed.map((post) => (
+    return feed.map((post) => (
       <PostCard
         key={post.post_id}
         post={post}
@@ -65,7 +67,7 @@ export default function SocialScreen() {
     <EmptyState
       icon="map-marker-path"
       title="Routes partagées"
-      description="Découvrez les meilleures routes des autres riders (Fonctionnalité à venir)"
+      description="Découvrez les meilleures routes des autres riders (fonctionnalité à venir)"
     />
   );
 
