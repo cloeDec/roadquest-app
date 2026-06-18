@@ -24,14 +24,15 @@ export function POIMarker({ poi, onPress }: POIMarkerProps) {
         latitude: poi.location.latitude,
         longitude: poi.location.longitude
       }}
-      pinColor={isVisited ? colors.success : config.color}
       onPress={onPress}
       opacity={isVisited ? 0.7 : 1}
+      anchor={{ x: 0.5, y: 0.5 }}
     >
-      <View style={[
-        styles.markerContainer,
-        { backgroundColor: isVisited ? colors.success : config.color }
-      ]}>
+      <View style={styles.markerWrapper}>
+        <View style={[
+          styles.markerContainer,
+          { backgroundColor: isVisited ? colors.success : config.color }
+        ]}>
         <MaterialCommunityIcons
           name={config.icon as IconName}
           size={20}
@@ -46,6 +47,7 @@ export function POIMarker({ poi, onPress }: POIMarkerProps) {
             />
           </View>
         )}
+        </View>
       </View>
 
       <Callout>
@@ -125,10 +127,15 @@ export function POIMarker({ poi, onPress }: POIMarkerProps) {
 }
 
 const styles = StyleSheet.create({
+  markerWrapper: {
+    padding: 4,
+    alignItems: "center",
+    justifyContent: "center"
+  },
   markerContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -137,7 +144,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5
+    elevation: 5,
+    overflow: "visible"
   },
   visitedBadge: {
     position: "absolute",
