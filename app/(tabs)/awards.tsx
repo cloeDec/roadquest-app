@@ -3,15 +3,25 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ScreenHeader, SectionHeader, StatsRow, EmptyState, Column } from "@/src/ui";
 import { colors, spacing } from "@/src/ui/theme";
 import { AchievementCard } from "@/src/components/achievements";
-import { useAppSelector } from "@/src/store/hooks";
-import { useState, useMemo } from "react";
-import { mockAchievements } from "@/src/mocks";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { loadAchievements, loadUserAchievements } from "@/src/store/slices/achievementsSlice";
+import { useState, useMemo, useEffect, useCallback } from "react";
 
 export default function AwardsScreen() {
-  const { userAchievements } = useAppSelector((state) => state.achievements);
+  const dispatch = useAppDispatch();
+  const { userAchievements, isLoading } = useAppSelector((state) => state.achievements);
   const [refreshing, setRefreshing] = useState(false);
 
-  const achievements = userAchievements.length > 0 ? userAchievements : mockAchievements;
+  const loadAll = useCallback(() => {
+    dispatch(loadAchievements() as any);
+    dispatch(loadUserAchievements() as any);
+  }, [dispatch]);
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
+
+  const achievements = userAchievements;
 
   const { unlocked, inProgress, stats } = useMemo(() => {
     const unlocked = achievements
@@ -27,7 +37,9 @@ export default function AwardsScreen() {
       });
 
     const xpEarned = unlocked.reduce((sum, a) => sum + a.xp_reward, 0);
-    const progressPercentage = Math.round((unlocked.length / achievements.length) * 100);
+    const progressPercentage = achievements.length > 0
+      ? Math.round((unlocked.length / achievements.length) * 100)
+      : 0;
 
     return {
       unlocked,
@@ -42,7 +54,8 @@ export default function AwardsScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    loadAll();
+    setRefreshing(false);
   };
 
   const unlockedTitle = "🏆 Débloqués (" + unlocked.length + ")";
@@ -59,27 +72,37 @@ export default function AwardsScreen() {
         </ScreenHeader>
 
         <Column gap="xl" style={styles.sections}>
-          <Column gap="md">
-            <SectionHeader title={unlockedTitle} />
-            {unlocked.length > 0 ? (
-              unlocked.map((achievement) => (
-                <AchievementCard key={achievement.achievement_id} achievement={achievement} />
-              ))
-            ) : (
-              <EmptyState
-                icon="trophy-outline"
-                title="Aucun trophée"
-                description="Partez en balade pour en gagner !"
-              />
-            )}
-          </Column>
+          {achievements.length === 0 ? (
+            <EmptyState
+              icon="trophy-outline"
+              title={isLoading ? "Chargement..." : "Aucun achievement"}
+              description="Partez en balade pour en gagner !"
+            />
+          ) : (
+            <>
+              <Column gap="md">
+                <SectionHeader title={unlockedTitle} />
+                {unlocked.length > 0 ? (
+                  unlocked.map((achievement) => (
+                    <AchievementCard key={achievement.achievement_id} achievement={achievement} />
+                  ))
+                ) : (
+                  <EmptyState
+                    icon="trophy-outline"
+                    title="Aucun trophée"
+                    description="Partez en balade pour en gagner !"
+                  />
+                )}
+              </Column>
 
-          <Column gap="md">
-            <SectionHeader title={inProgressTitle} />
-            {inProgress.map((achievement) => (
-              <AchievementCard key={achievement.achievement_id} achievement={achievement} />
-            ))}
-          </Column>
+              <Column gap="md">
+                <SectionHeader title={inProgressTitle} />
+                {inProgress.map((achievement) => (
+                  <AchievementCard key={achievement.achievement_id} achievement={achievement} />
+                ))}
+              </Column>
+            </>
+          )}
         </Column>
       </ScrollView>
     </SafeAreaView>

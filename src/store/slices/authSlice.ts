@@ -20,6 +20,7 @@ interface User {
   total_distance?: number;
   total_trips?: number;
   regions_explored?: number;
+  pois_discovered?: number;
 }
 
 interface AuthState {
