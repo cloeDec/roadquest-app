@@ -22,31 +22,33 @@ export function POIMarker({ poi, onPress }: POIMarkerProps) {
     <Marker
       coordinate={{
         latitude: poi.location.latitude,
-        longitude: poi.location.longitude
+        longitude: poi.location.longitude,
       }}
       onPress={onPress}
       opacity={isVisited ? 0.7 : 1}
       anchor={{ x: 0.5, y: 0.5 }}
     >
       <View style={styles.markerWrapper}>
-        <View style={[
-          styles.markerContainer,
-          { backgroundColor: isVisited ? colors.success : config.color }
-        ]}>
-        <MaterialCommunityIcons
-          name={config.icon as IconName}
-          size={20}
-          color="#FFFFFF"
-        />
-        {isVisited && (
-          <View style={styles.visitedBadge}>
-            <MaterialCommunityIcons
-              name="check-circle"
-              size={12}
-              color="#FFFFFF"
-            />
-          </View>
-        )}
+        <View
+          style={[
+            styles.markerContainer,
+            { backgroundColor: isVisited ? colors.success : config.color },
+          ]}
+        >
+          <MaterialCommunityIcons
+            name={config.icon as IconName}
+            size={20}
+            color="#FFFFFF"
+          />
+          {isVisited && (
+            <View style={styles.visitedBadge}>
+              <MaterialCommunityIcons
+                name="check-circle"
+                size={12}
+                color="#FFFFFF"
+              />
+            </View>
+          )}
         </View>
       </View>
 
@@ -70,9 +72,7 @@ export function POIMarker({ poi, onPress }: POIMarkerProps) {
                 size={16}
                 color={colors.textSecondary}
               />
-              <Caption style={styles.infoText}>
-                {config.label}
-              </Caption>
+              <Caption style={styles.infoText}>{config.label}</Caption>
             </View>
 
             <View style={styles.infoRow}>
@@ -106,9 +106,7 @@ export function POIMarker({ poi, onPress }: POIMarkerProps) {
                   size={16}
                   color={colors.success}
                 />
-                <Caption style={styles.visitedText}>
-                  Visité
-                </Caption>
+                <Caption style={styles.visitedText}>Visité</Caption>
               </View>
             )}
           </View>
@@ -128,9 +126,10 @@ export function POIMarker({ poi, onPress }: POIMarkerProps) {
 
 const styles = StyleSheet.create({
   markerWrapper: {
-    padding: 4,
+    width: 35,
+    height: 35,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   markerContainer: {
     width: 36,
@@ -145,7 +144,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    overflow: "visible"
+    overflow: "visible",
   },
   visitedBadge: {
     position: "absolute",
@@ -158,32 +157,32 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#FFFFFF"
+    borderColor: "#FFFFFF",
   },
   calloutContainer: {
     width: 250,
-    padding: spacing.md
+    padding: spacing.md,
   },
   calloutHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    marginBottom: spacing.sm
+    marginBottom: spacing.sm,
   },
   calloutTitle: {
     flex: 1,
   },
   calloutInfo: {
     gap: spacing.xs,
-    marginBottom: spacing.sm
+    marginBottom: spacing.sm,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.xs
+    gap: spacing.xs,
   },
   infoText: {
-    color: colors.textSecondary
+    color: colors.textSecondary,
   },
   visitedTag: {
     flexDirection: "row",
@@ -193,13 +192,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: 12,
-    alignSelf: "flex-start"
+    alignSelf: "flex-start",
   },
   visitedText: {
     color: colors.success,
-    fontWeight: "600"
+    fontWeight: "600",
   },
   description: {
-    lineHeight: 18
-  }
+    lineHeight: 18,
+  },
 });
