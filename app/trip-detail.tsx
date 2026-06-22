@@ -1,4 +1,4 @@
-import { colors, spacing, Card, Text } from "@/src/ui";
+import { colors, spacing, Card, Text, Button } from "@/src/ui";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import {
   deleteTripFromAPI,
   Trip,
 } from "@/src/store/slices/tripsSlice";
+import { sharePost } from "@/src/store/slices/socialSlice";
 import {
   TripMap,
   TripHeader,
@@ -69,6 +70,38 @@ export default function TripDetailScreen() {
     return (trip.distance / (trip.duration / 3600)).toFixed(1);
   };
 
+  const handleShareTrip = () => {
+    if (!trip) return;
+
+    Alert.alert(
+      "Partager ce trajet",
+      "Publier ce trajet sur le fil d'actualité de la communauté ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Partager",
+          onPress: async () => {
+            try {
+              const title = trip.destination?.name
+                ? `Balade vers ${trip.destination.name}`
+                : "Nouvelle balade";
+              await dispatch(
+                sharePost(
+                  trip.id,
+                  title,
+                  `${trip.distance.toFixed(1)} km parcourus`
+                ) as any
+              );
+              Alert.alert("Succès", "Trajet partagé sur le fil !");
+            } catch (error) {
+              Alert.alert("Erreur", "Impossible de partager ce trajet.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleDeleteTrip = () => {
     Alert.alert(
       "Supprimer le trajet",
@@ -125,6 +158,15 @@ export default function TripDetailScreen() {
           date={formatDate(trip.startTime)}
           time={formatTime(trip.startTime)}
         />
+
+        <View style={styles.shareButtonContainer}>
+          <Button variant="primary" onPress={handleShareTrip}>
+            <View style={styles.shareButtonContent}>
+              <MaterialCommunityIcons name="share-variant" size={20} color={colors.textPrimary} />
+              <Text variant="body" bold color="textPrimary">Partager sur le fil</Text>
+            </View>
+          </Button>
+        </View>
 
         <View style={styles.statsGrid}>
           <StatCard
@@ -285,6 +327,16 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     gap: spacing.md,
     marginBottom: spacing.md,
+  },
+  shareButtonContainer: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  shareButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
   },
   detailsCard: {
     marginHorizontal: spacing.lg,

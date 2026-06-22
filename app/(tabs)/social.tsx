@@ -1,6 +1,6 @@
 import { StyleSheet, ScrollView, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ScreenHeader, TabBar, EmptyState, FAB, Column } from "@/src/ui";
+import { ScreenHeader, TabBar, EmptyState, Column } from "@/src/ui";
 import { colors, spacing } from "@/src/ui/theme";
 import { PostCard } from "@/src/components/social";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
@@ -32,14 +32,9 @@ export default function SocialScreen() {
     dispatch(likePost(postId) as any);
   };
 
-  const handleComment = (postId: string) => {
-  };
-
-  const handleProfilePress = (userId: string) => {
-  };
-
-  const handleCreatePost = () => {
-  };
+  // Le partage d'un trajet se fait depuis l'écran de détail d'un trajet
+  // (bouton "Partager sur le fil"), car une publication est toujours liée à
+  // un trajet précis. Le fil ne fait donc qu'afficher et liker les posts.
 
   const renderFeedContent = () => {
     if (feed.length === 0) {
@@ -57,8 +52,6 @@ export default function SocialScreen() {
         key={post.post_id}
         post={post}
         onLike={handleLike}
-        onComment={handleComment}
-        onProfilePress={handleProfilePress}
       />
     ));
   };
@@ -85,8 +78,6 @@ export default function SocialScreen() {
           {activeTab === "feed" ? renderFeedContent() : renderRoutesContent()}
         </Column>
       </ScrollView>
-
-      {activeTab === "feed" && <FAB icon="plus" onPress={handleCreatePost} />}
     </SafeAreaView>
   );
 }

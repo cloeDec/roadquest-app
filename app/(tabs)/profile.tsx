@@ -38,7 +38,12 @@ export default function ProfileScreen() {
 
   const currentLevel = user.level || 8;
   const currentXP = user.xp || 1250;
-  const nextLevelXP = Math.floor(100 * Math.pow(currentLevel + 1, 1.5));
+  // Le backend attribue le niveau via le trigger SQL update_user_level :
+  // level = floor(xp / 1000) + 1. On reste cohérent avec cette formule
+  // (1000 XP par niveau) pour que la barre de progression corresponde au
+  // niveau réellement stocké, plutôt qu'une formule exponentielle divergente.
+  const XP_PER_LEVEL = 1000;
+  const nextLevelXP = currentLevel * XP_PER_LEVEL;
 
   // pois_discovered vient maintenant réellement de l'API (/api/user/profile)
   // pour un utilisateur connecté ; plus de valeur figée à 12.

@@ -10,8 +10,8 @@ import type { RidePost } from "@/src/store/slices/socialSlice";
 interface PostCardProps {
   post: RidePost;
   onLike: (postId: string) => void;
-  onComment: (postId: string) => void;
-  onProfilePress: (userId: string) => void;
+  onComment?: (postId: string) => void;
+  onProfilePress?: (userId: string) => void;
 }
 
 export function PostCard({ post, onLike, onComment, onProfilePress }: PostCardProps) {
@@ -22,7 +22,7 @@ export function PostCard({ post, onLike, onComment, onProfilePress }: PostCardPr
       {/* Header */}
       <TouchableOpacity
         style={styles.header}
-        onPress={() => onProfilePress(post.user_id)}
+        onPress={() => onProfilePress?.(post.user_id)}
       >
         <View style={styles.avatar}>
           {post.author.avatar_url ? (
@@ -128,7 +128,7 @@ export function PostCard({ post, onLike, onComment, onProfilePress }: PostCardPr
 
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => onComment(post.post_id)}
+          onPress={() => onComment?.(post.post_id)}
         >
           <MaterialCommunityIcons
             name="comment-outline"
