@@ -7,13 +7,10 @@ import { logoutUser } from "@/src/store/slices/authSlice";
 import { loadAchievements, loadUserAchievements } from "@/src/store/slices/achievementsSlice";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
-import {
-  ProfileHeader,
-  MotorcycleCard,
-  RankCard,
-  StatsGrid,
-} from "@/src/components/profile";
+import { ProfileHeader, RankCard, StatsGrid } from "@/src/components/profile";
 import { mockUser } from "@/src/mocks";
+
+const XP_PER_LEVEL = 1000;
 
 export default function ProfileScreen() {
   const dispatch = useAppDispatch();
@@ -21,14 +18,8 @@ export default function ProfileScreen() {
   const { user: reduxUser } = useAppSelector((state) => state.auth);
   const { stats: achievementStats } = useAppSelector((state) => state.achievements);
 
-  // Mode démo explicite : si personne n'est connecté, on affiche un profil
-  // fictif clairement signalé par le bandeau "Mode démo" plus bas, plutôt
-  // que de bloquer l'écran. Dès qu'un vrai utilisateur est connecté, aucune
-  // valeur de cet objet mockUser n'est plus utilisée.
   const user = reduxUser || mockUser;
 
-  // Ne recharger les achievements que si on a un vrai utilisateur connecté
-  // et qu'ils n'ont pas déjà été chargés (ex: depuis l'onglet Trophées).
   useEffect(() => {
     if (reduxUser) {
       dispatch(loadAchievements() as any);
@@ -36,27 +27,20 @@ export default function ProfileScreen() {
     }
   }, [reduxUser, dispatch]);
 
-  const currentLevel = user.level || 8;
-  const currentXP = user.xp || 1250;
-  // Le backend attribue le niveau via le trigger SQL update_user_level :
-  // level = floor(xp / 1000) + 1. On reste cohérent avec cette formule
-  // (1000 XP par niveau) pour que la barre de progression corresponde au
-  // niveau réellement stocké, plutôt qu'une formule exponentielle divergente.
-  const XP_PER_LEVEL = 1000;
+  const currentLevel = user.level || 1;
+  const currentXP = user.xp || 0;
   const nextLevelXP = currentLevel * XP_PER_LEVEL;
 
-  // pois_discovered vient maintenant réellement de l'API (/api/user/profile)
-  // pour un utilisateur connecté ; plus de valeur figée à 12.
   const poisDiscovered = reduxUser
     ? (reduxUser as any).pois_discovered ?? 0
     : mockUser.pois_discovered;
 
-  const trophiesUnlocked = reduxUser ? achievementStats.unlocked : 3;
+  const trophiesUnlocked = reduxUser ? achievementStats.unlocked : 0;
 
   const stats = [
-    { icon: "road-variant" as const, iconColor: "success" as const, value: user.total_distance || 2340, label: "km totaux" },
-    { icon: "map-marker-path" as const, iconColor: "brandPrimary" as const, value: user.total_trips || 42, label: "trajets" },
-    { icon: "map" as const, iconColor: "error" as const, value: user.regions_explored || 5, label: "régions" },
+    { icon: "road-variant" as const, iconColor: "success" as const, value: user.total_distance || 0, label: "km totaux" },
+    { icon: "map-marker-path" as const, iconColor: "brandPrimary" as const, value: user.total_trips || 0, label: "trajets" },
+    { icon: "map" as const, iconColor: "error" as const, value: user.regions_explored || 0, label: "régions" },
     { icon: "map-marker-star" as const, iconColor: "warning" as const, value: poisDiscovered, label: "POIs" },
     { icon: "trophy" as const, iconColor: "rankDiamond" as const, value: trophiesUnlocked, label: "trophées" },
     { icon: "star" as const, iconColor: "warning" as const, value: currentXP, label: "XP total" },
@@ -85,10 +69,6 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleEditMotorcycle = () => {
-    Alert.alert("Modifier ma moto", "Cette fonctionnalité sera bientôt disponible");
-  };
-
   const handleEditProfile = () => {
     Alert.alert("Modifier le profil", "Cette fonctionnalité sera bientôt disponible");
   };
@@ -105,15 +85,6 @@ export default function ProfileScreen() {
           nextLevelXP={nextLevelXP}
         />
 
-        {user.motorcycle && (
-          <Section title="🏍️ Ma Moto">
-            <MotorcycleCard
-              motorcycle={user.motorcycle}
-              onEdit={handleEditMotorcycle}
-            />
-          </Section>
-        )}
-
         <Section title="📊 Statistiques Globales">
           <StatsGrid stats={stats} />
         </Section>
@@ -125,7 +96,6 @@ export default function ProfileScreen() {
         <Section title="⚙️ Paramètres">
           <MenuList>
             <MenuItem icon="account-edit" label="Modifier le profil" onPress={handleEditProfile} />
-            <MenuItem icon="motorbike" label="Ma moto" onPress={handleEditMotorcycle} />
             <MenuItem icon="cog" label="Préférences" />
             <MenuItem icon="bell" label="Notifications" />
             <MenuItem icon="shield-check" label="Confidentialité" />

@@ -12,26 +12,14 @@ interface AchievementCardProps {
   onPress?: () => void;
 }
 
-const RARITY_COLORS = {
-  common: {
-    gradient: ["#94A3B8", "#64748B"],
-    glow: "#CBD5E1"
-  },
-  rare: {
-    gradient: ["#3B82F6", "#2563EB"],
-    glow: "#60A5FA"
-  },
-  epic: {
-    gradient: ["#A855F7", "#9333EA"],
-    glow: "#C084FC"
-  },
-  legendary: {
-    gradient: ["#F59E0B", "#D97706"],
-    glow: "#FCD34D"
-  }
+const RARITY_COLORS: Record<string, { gradient: [string, string]; glow: string }> = {
+  bronze: { gradient: ["#CD7F32", "#8B5A2B"], glow: "#D4A574" },
+  silver: { gradient: ["#C0C0C0", "#A8A8A8"], glow: "#D3D3D3" },
+  gold: { gradient: ["#FFD700", "#DAA520"], glow: "#FFE55C" },
+  platinum: { gradient: ["#E5E4E2", "#A0B2C6"], glow: "#B8C5D6" }
 };
 
-const CATEGORY_ICONS = {
+const CATEGORY_ICONS: Record<string, string> = {
   distance: "road",
   pois: "map-marker-star",
   cols: "image-filter-hdr",
@@ -46,24 +34,20 @@ export function AchievementCard({ achievement, onPress }: AchievementCardProps) 
     ? Math.round((achievement.progress / achievement.requirement_value) * 100)
     : 0;
 
-  const rarity = achievement.rarity || 'common';
-  const rarityColor = RARITY_COLORS[rarity];
-  const icon = achievement.badge_icon || CATEGORY_ICONS[achievement.category] || 'trophy';
+  const rarity = achievement.rarity || "bronze";
+  const rarityColor = RARITY_COLORS[rarity] || RARITY_COLORS.bronze;
+  const icon = achievement.badge_icon || CATEGORY_ICONS[achievement.category] || "trophy";
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} disabled={!onPress}>
       <Card
         variant={isUnlocked ? "elevated" : "outlined"}
         padding="md"
-        style={[
-          styles.container,
-          !isUnlocked && styles.lockedContainer
-        ]}
+        style={[styles.container, !isUnlocked && styles.lockedContainer]}
       >
-        {/* Indicateur de rareté */}
         {isUnlocked && (
           <LinearGradient
-            colors={rarityColor.gradient as [string, string]}
+            colors={rarityColor.gradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.rarityBorder}
@@ -71,11 +55,10 @@ export function AchievementCard({ achievement, onPress }: AchievementCardProps) 
         )}
 
         <View style={styles.content}>
-          {/* Icône */}
           <View style={[
             styles.iconContainer,
             isUnlocked
-              ? { backgroundColor: rarityColor.glow + '20', borderColor: rarityColor.glow }
+              ? { backgroundColor: rarityColor.glow + "20", borderColor: rarityColor.glow }
               : styles.lockedIcon
           ]}>
             <MaterialCommunityIcons
@@ -90,7 +73,6 @@ export function AchievementCard({ achievement, onPress }: AchievementCardProps) 
             )}
           </View>
 
-          {/* Informations */}
           <View style={styles.info}>
             <Text variant="body" bold style={!isUnlocked && styles.lockedText}>
               {achievement.name}
@@ -99,7 +81,6 @@ export function AchievementCard({ achievement, onPress }: AchievementCardProps) 
               {achievement.description}
             </Caption>
 
-            {/* Barre de progression */}
             {!isUnlocked && achievement.requirement_value > 0 && (
               <View style={styles.progressContainer}>
                 <View style={styles.progressBar}>
@@ -116,7 +97,6 @@ export function AchievementCard({ achievement, onPress }: AchievementCardProps) 
               </View>
             )}
 
-            {/* Récompense XP */}
             <View style={styles.reward}>
               <MaterialCommunityIcons
                 name="star"
@@ -130,10 +110,9 @@ export function AchievementCard({ achievement, onPress }: AchievementCardProps) 
           </View>
         </View>
 
-        {/* Date de déblocage */}
         {isUnlocked && achievement.unlocked_at && (
           <Caption style={styles.unlockedDate}>
-            Débloqué le {new Date(achievement.unlocked_at).toLocaleDateString('fr-FR')}
+            Débloqué le {new Date(achievement.unlocked_at).toLocaleDateString("fr-FR")}
           </Caption>
         )}
       </Card>
