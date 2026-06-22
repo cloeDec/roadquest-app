@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { View, StyleSheet, TouchableOpacity, Image, ScrollView } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions } from "react-native";
 import { Text, Caption } from "@/src/ui/components/Text";
 import { Card } from "@/src/ui/components/Card";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { colors, spacing, borderRadius } from "@/src/ui/theme";
 import { formatDistance, formatDurationMinutes, formatRelativeTime } from "@/src/utils";
 import type { RidePost } from "@/src/store/slices/socialSlice";
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 interface PostCardProps {
   post: RidePost;
@@ -19,7 +21,6 @@ export function PostCard({ post, onLike, onComment, onProfilePress }: PostCardPr
 
   return (
     <Card variant="elevated" style={styles.container}>
-      {/* Header */}
       <TouchableOpacity
         style={styles.header}
         onPress={() => onProfilePress?.(post.user_id)}
@@ -43,7 +44,6 @@ export function PostCard({ post, onLike, onComment, onProfilePress }: PostCardPr
         </View>
       </TouchableOpacity>
 
-      {/* Photos */}
       {post.photos && post.photos.length > 0 && (
         <View style={styles.photosContainer}>
           <ScrollView
@@ -52,8 +52,7 @@ export function PostCard({ post, onLike, onComment, onProfilePress }: PostCardPr
             showsHorizontalScrollIndicator={false}
             onScroll={(event) => {
               const index = Math.round(
-                event.nativeEvent.contentOffset.x /
-                  event.nativeEvent.layoutMeasurement.width
+                event.nativeEvent.contentOffset.x / event.nativeEvent.layoutMeasurement.width
               );
               setImageIndex(index);
             }}
@@ -78,74 +77,41 @@ export function PostCard({ post, onLike, onComment, onProfilePress }: PostCardPr
         </View>
       )}
 
-      {/* Content */}
       <View style={styles.content}>
-        <Text variant="h3" style={styles.title}>
-          {post.title}
-        </Text>
+        <Text variant="h3" style={styles.title}>{post.title}</Text>
         {post.description && (
-          <Text variant="body" style={styles.description}>
-            {post.description}
-          </Text>
+          <Text variant="body" style={styles.description}>{post.description}</Text>
         )}
 
-        {/* Ride Stats */}
         <View style={styles.stats}>
           <View style={styles.statItem}>
-            <MaterialCommunityIcons
-              name="map-marker-distance"
-              size={16}
-              color={colors.brandPrimary}
-            />
+            <MaterialCommunityIcons name="map-marker-distance" size={16} color={colors.brandPrimary} />
             <Caption>{formatDistance(post.distance_km, 1)}</Caption>
           </View>
           <View style={styles.statItem}>
-            <MaterialCommunityIcons
-              name="clock-outline"
-              size={16}
-              color={colors.brandPrimary}
-            />
+            <MaterialCommunityIcons name="clock-outline" size={16} color={colors.brandPrimary} />
             <Caption>{formatDurationMinutes(post.duration_minutes)}</Caption>
           </View>
         </View>
       </View>
 
-      {/* Actions */}
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onLike(post.post_id)}
-        >
+        <TouchableOpacity style={styles.actionButton} onPress={() => onLike(post.post_id)}>
           <MaterialCommunityIcons
             name={post.is_liked ? "heart" : "heart-outline"}
             size={24}
             color={post.is_liked ? colors.error : colors.textPrimary}
           />
-          <Text variant="body" style={styles.actionText}>
-            {post.likes_count}
-          </Text>
+          <Text variant="body" style={styles.actionText}>{post.likes_count}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onComment?.(post.post_id)}
-        >
-          <MaterialCommunityIcons
-            name="comment-outline"
-            size={24}
-            color={colors.textPrimary}
-          />
-          <Text variant="body" style={styles.actionText}>
-            {post.comments_count}
-          </Text>
+        <TouchableOpacity style={styles.actionButton} onPress={() => onComment?.(post.post_id)}>
+          <MaterialCommunityIcons name="comment-outline" size={24} color={colors.textPrimary} />
+          <Text variant="body" style={styles.actionText}>{post.comments_count}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton}>
-          <MaterialCommunityIcons
-            name="share-variant"
-            size={24}
-            color={colors.textPrimary}
-          />
+          <MaterialCommunityIcons name="share-variant" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
     </Card>
@@ -201,7 +167,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   photo: {
-    width: 400, // Largeur fixe pour le scroll horizontal
+    width: SCREEN_WIDTH - spacing.md * 2,
     height: 300,
     backgroundColor: colors.backgroundSecondary,
   },
