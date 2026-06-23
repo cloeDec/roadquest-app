@@ -19,24 +19,15 @@ const RARITY_COLORS: Record<string, { gradient: [string, string]; glow: string }
   platinum: { gradient: ["#E5E4E2", "#A0B2C6"], glow: "#B8C5D6" }
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  distance: "road",
-  pois: "map-marker-star",
-  cols: "image-filter-hdr",
-  regions: "map",
-  social: "account-group",
-  general: "trophy"
-};
-
 export function AchievementCard({ achievement, onPress }: AchievementCardProps) {
   const isUnlocked = achievement.is_unlocked;
-  const progressPercentage = achievement.requirement_value > 0
-    ? Math.round((achievement.progress / achievement.requirement_value) * 100)
+  const progressPercentage = achievement.condition_value > 0
+    ? Math.round((achievement.progress / achievement.condition_value) * 100)
     : 0;
 
   const rarity = achievement.rarity || "bronze";
   const rarityColor = RARITY_COLORS[rarity] || RARITY_COLORS.bronze;
-  const icon = achievement.badge_icon || CATEGORY_ICONS[achievement.category] || "trophy";
+  const icon = achievement.icon_url || "trophy";
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} disabled={!onPress}>
@@ -81,7 +72,7 @@ export function AchievementCard({ achievement, onPress }: AchievementCardProps) 
               {achievement.description}
             </Caption>
 
-            {!isUnlocked && achievement.requirement_value > 0 && (
+            {!isUnlocked && achievement.condition_value > 0 && (
               <View style={styles.progressContainer}>
                 <View style={styles.progressBar}>
                   <View
@@ -92,7 +83,7 @@ export function AchievementCard({ achievement, onPress }: AchievementCardProps) 
                   />
                 </View>
                 <Caption style={styles.progressText}>
-                  {achievement.progress} / {achievement.requirement_value}
+                  {achievement.progress} / {achievement.condition_value}
                 </Caption>
               </View>
             )}

@@ -31,8 +31,8 @@ export default function AwardsScreen() {
     const inProgress = achievements
       .filter((a) => !a.is_unlocked)
       .sort((a, b) => {
-        const progressA = a.requirement_value > 0 ? a.progress / a.requirement_value : 0;
-        const progressB = b.requirement_value > 0 ? b.progress / b.requirement_value : 0;
+        const progressA = a.condition_value > 0 ? a.progress / a.condition_value : 0;
+        const progressB = b.condition_value > 0 ? b.progress / b.condition_value : 0;
         return progressB - progressA;
       });
 
