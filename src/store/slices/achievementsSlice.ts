@@ -4,16 +4,13 @@ import type { RootState } from "../index";
 
 export interface Achievement {
   achievement_id: string;
-  achievement_key: string;
   name: string;
   description: string;
   xp_reward: number;
-  badge_icon: string;
-  category: 'distance' | 'pois' | 'cols' | 'regions' | 'social' | 'general';
-  requirement_type: 'count' | 'total' | 'unique' | 'streak';
-  requirement_value: number;
-  rarity?: 'common' | 'rare' | 'epic' | 'legendary';
-  icon_url?: string;
+  icon_url: string;
+  condition_type: string;
+  condition_value: number;
+  rarity: string;
 }
 
 export interface UserAchievement extends Achievement {
@@ -72,7 +69,7 @@ const achievementsSlice = createSlice({
       if (achievement && !achievement.is_unlocked) {
         achievement.is_unlocked = true;
         achievement.unlocked_at = new Date().toISOString();
-        achievement.progress = achievement.requirement_value;
+        achievement.progress = achievement.condition_value;
         state.stats.unlocked++;
         state.stats.progress_percentage = state.stats.total > 0
           ? Math.round((state.stats.unlocked / state.stats.total) * 100)
@@ -87,7 +84,7 @@ const achievementsSlice = createSlice({
         achievement.progress = action.payload.progress;
 
         // Auto-unlock si le progress atteint la valeur requise
-        if (achievement.progress >= achievement.requirement_value) {
+        if (achievement.progress >= achievement.condition_value) {
           achievement.is_unlocked = true;
           achievement.unlocked_at = new Date().toISOString();
           state.stats.unlocked++;
