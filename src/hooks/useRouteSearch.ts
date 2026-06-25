@@ -69,8 +69,7 @@ export function useRouteSearch(): UseRouteSearchResult {
         setSuggestions([]);
         setShowSuggestions(false);
       }
-    } catch (error) {
-      console.error("Erreur recherche:", error);
+    } catch {
       Alert.alert("Erreur", "Impossible de rechercher des adresses.");
     }
   }, []);

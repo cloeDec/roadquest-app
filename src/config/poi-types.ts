@@ -1,8 +1,3 @@
-/**
- * Configuration des types de POI
- * @module config/poi-types
- */
-
 export type POIType =
   | "col"
   | "route_panoramique"
@@ -21,9 +16,6 @@ export interface POITypeConfig {
   xpBonus?: number;
 }
 
-/**
- * Configuration centralisée de tous les types de POI
- */
 export const POI_TYPE_CONFIG: Record<POIType, POITypeConfig> = {
   col: {
     icon: "image-filter-hdr",
@@ -81,24 +73,16 @@ export const POI_TYPE_CONFIG: Record<POIType, POITypeConfig> = {
   },
 };
 
-/**
- * Récupère la configuration d'un type de POI
- * @param type - Type de POI
- * @returns Configuration du POI ou config par défaut
- */
-export const getPOITypeConfig = (type: string): POITypeConfig => {
-  return (
-    POI_TYPE_CONFIG[type as POIType] || {
-      icon: "map-marker",
-      color: "#95A5A6",
-      label: type,
-    }
-  );
+const DEFAULT_POI_CONFIG: POITypeConfig = {
+  icon: "map-marker",
+  color: "#95A5A6",
+  label: "Autre",
 };
 
-/**
- * Liste des types de POI pour les filtres
- */
+export const getPOITypeConfig = (type: string): POITypeConfig => {
+  return POI_TYPE_CONFIG[type as POIType] || { ...DEFAULT_POI_CONFIG, label: type };
+};
+
 export const POI_FILTER_OPTIONS = Object.entries(POI_TYPE_CONFIG).map(
   ([type, config]) => ({
     type: type as POIType,

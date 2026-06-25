@@ -1,8 +1,3 @@
-/**
- * Données mockées pour l'utilisateur (développement uniquement)
- * @module mocks/user
- */
-
 export interface MockUser {
   user_id: string;
   email: string;

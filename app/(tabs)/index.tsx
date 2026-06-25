@@ -23,6 +23,15 @@ import {
 } from "@/src/components/map";
 import { usePOIDetection, useNavigation, useRouteSearch } from "@/src/hooks";
 
+const DEFAULT_REGION = {
+  latitude: 48.8566,
+  longitude: 2.3522,
+  latitudeDelta: 0.05,
+  longitudeDelta: 0.05,
+};
+
+const MAP_PADDING = { top: 100, right: 50, bottom: 100, left: 50 };
+
 export default function MapScreen() {
   const dispatch = useAppDispatch();
   const { filters, selectedPOI } = useAppSelector((state) => state.pois);
@@ -32,7 +41,6 @@ export default function MapScreen() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [showPOIModal, setShowPOIModal] = useState(false);
 
-  // Hooks personnalisés
   const {
     destination,
     suggestions,
@@ -45,17 +53,19 @@ export default function MapScreen() {
     clearSearch,
   } = useRouteSearch();
 
+  const animateToLocation = useCallback((lat: number, lng: number) => {
+    mapRef.current?.animateToRegion({
+      latitude: lat,
+      longitude: lng,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+  }, []);
+
   const handleLocationUpdate = useCallback((newLocation: Location.LocationObject) => {
     setLocation(newLocation);
-    if (mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude: newLocation.coords.latitude,
-        longitude: newLocation.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
-    }
-  }, []);
+    animateToLocation(newLocation.coords.latitude, newLocation.coords.longitude);
+  }, [animateToLocation]);
 
   const handleArrival = useCallback(() => {
     stopNavigation();
@@ -70,20 +80,17 @@ export default function MapScreen() {
     stopNavigation,
   } = useNavigation(location, destinationCoords, handleLocationUpdate, handleArrival);
 
-  // Détection POI
   usePOIDetection(
     location?.coords.latitude || null,
     location?.coords.longitude || null,
     isTracking
   );
 
-  // Initialisation
   useEffect(() => {
     requestLocationPermission();
     dispatch(loadTripsFromAPI() as any);
   }, []);
 
-  // Charger POIs à proximité
   useEffect(() => {
     if (location) {
       dispatch(loadNearbyPOIs(
@@ -103,15 +110,7 @@ export default function MapScreen() {
 
     const currentLocation = await Location.getCurrentPositionAsync({});
     setLocation(currentLocation);
-
-    if (mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
-    }
+    animateToLocation(currentLocation.coords.latitude, currentLocation.coords.longitude);
   };
 
   const handlePlayPress = async () => {
@@ -133,33 +132,25 @@ export default function MapScreen() {
   };
 
   const centerOnUser = () => {
-    if (location && mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
+    if (location) {
+      animateToLocation(location.coords.latitude, location.coords.longitude);
     }
   };
 
-  const handlePlaceSelect = async (place: any) => {
-    if (location) {
-      await selectPlace(place, {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
+  const fitToCoordinates = (coords: { latitude: number; longitude: number }[]) => {
+    mapRef.current?.fitToCoordinates(coords, { edgePadding: MAP_PADDING, animated: true });
+  };
 
-      if (mapRef.current) {
-        mapRef.current.fitToCoordinates(
-          [
-            { latitude: location.coords.latitude, longitude: location.coords.longitude },
-            { latitude: place.geometry.coordinates[1], longitude: place.geometry.coordinates[0] },
-          ],
-          { edgePadding: { top: 100, right: 50, bottom: 100, left: 50 }, animated: true }
-        );
-      }
-    }
+  const handlePlaceSelect = async (place: any) => {
+    if (!location) return;
+
+    const origin = { latitude: location.coords.latitude, longitude: location.coords.longitude };
+    await selectPlace(place, origin);
+
+    fitToCoordinates([
+      origin,
+      { latitude: place.geometry.coordinates[1], longitude: place.geometry.coordinates[0] },
+    ]);
   };
 
   const handleTypeToggle = (type: string) => {
@@ -179,29 +170,22 @@ export default function MapScreen() {
   };
 
   const handleNavigateToPOI = async () => {
-    if (selectedPOI && location) {
-      const poiCoords = {
-        latitude: selectedPOI.location.latitude,
-        longitude: selectedPOI.location.longitude,
-      };
+    if (!selectedPOI || !location) return;
 
-      await setDestinationDirect(selectedPOI.name, poiCoords, {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
+    const poiCoords = {
+      latitude: selectedPOI.location.latitude,
+      longitude: selectedPOI.location.longitude,
+    };
+    const origin = { latitude: location.coords.latitude, longitude: location.coords.longitude };
 
-      setShowPOIModal(false);
+    await setDestinationDirect(selectedPOI.name, poiCoords, origin);
+    setShowPOIModal(false);
+    fitToCoordinates([origin, poiCoords]);
+  };
 
-      if (mapRef.current) {
-        mapRef.current.fitToCoordinates(
-          [
-            { latitude: location.coords.latitude, longitude: location.coords.longitude },
-            poiCoords,
-          ],
-          { edgePadding: { top: 100, right: 50, bottom: 100, left: 50 }, animated: true }
-        );
-      }
-    }
+  const handleClosePOIModal = () => {
+    setShowPOIModal(false);
+    dispatch(setSelectedPOI(null));
   };
 
   return (
@@ -215,12 +199,7 @@ export default function MapScreen() {
         followsUserLocation
         userLocationPriority="high"
         userInterfaceStyle="dark"
-        initialRegion={{
-          latitude: 48.8566,
-          longitude: 2.3522,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }}
+        initialRegion={DEFAULT_REGION}
       >
         {destinationCoords && (
           <Marker
@@ -290,10 +269,7 @@ export default function MapScreen() {
       <POIDetailModal
         poi={selectedPOI}
         visible={showPOIModal}
-        onClose={() => {
-          setShowPOIModal(false);
-          dispatch(setSelectedPOI(null));
-        }}
+        onClose={handleClosePOIModal}
         onNavigate={handleNavigateToPOI}
       />
     </SafeAreaView>
