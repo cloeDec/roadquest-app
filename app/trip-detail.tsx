@@ -5,10 +5,7 @@ import { useEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import {
-  deleteTripFromAPI,
-  Trip,
-} from "@/src/store/slices/tripsSlice";
+import { deleteTripFromAPI, Trip } from "@/src/store/slices/tripsSlice";
 import {
   TripMap,
   TripHeader,
@@ -17,6 +14,12 @@ import {
   MapLegend,
 } from "@/src/components/trip-detail";
 import { StatCard } from "@/src/components/rides";
+import {
+  formatDateLong,
+  formatTime,
+  formatDurationSeconds,
+  calculateAverageSpeed,
+} from "@/src/utils";
 
 export default function TripDetailScreen() {
   const router = useRouter();
@@ -37,39 +40,6 @@ export default function TripDetailScreen() {
     }
   }, [tripId, trips]);
 
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}min`;
-    }
-    return `${minutes}min`;
-  };
-
-  const calculateAverageSpeed = () => {
-    if (!trip || trip.duration === 0) return "0";
-    return (trip.distance / (trip.duration / 3600)).toFixed(1);
-  };
-
-
   const handleDeleteTrip = () => {
     Alert.alert(
       "Supprimer le trajet",
@@ -85,7 +55,7 @@ export default function TripDetailScreen() {
                 await dispatch(deleteTripFromAPI(trip.id) as any);
                 router.back();
                 Alert.alert("Succès", "Trajet supprimé avec succès");
-              } catch (error) {
+              } catch {
                 Alert.alert("Erreur", "Impossible de supprimer le trajet");
               }
             }
@@ -107,6 +77,8 @@ export default function TripDetailScreen() {
     );
   }
 
+  const avgSpeed = calculateAverageSpeed(trip.distance, trip.duration);
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView
@@ -123,7 +95,7 @@ export default function TripDetailScreen() {
 
         <TripInfoCard
           destinationName={trip.destination?.name || "Destination inconnue"}
-          date={formatDate(trip.startTime)}
+          date={formatDateLong(trip.startTime)}
           time={formatTime(trip.startTime)}
         />
 
@@ -147,7 +119,7 @@ export default function TripDetailScreen() {
                 color={colors.accentPrimary}
               />
             }
-            value={formatDuration(trip.duration)}
+            value={formatDurationSeconds(trip.duration)}
             label="Durée"
           />
           <StatCard
@@ -158,7 +130,7 @@ export default function TripDetailScreen() {
                 color={colors.accentPrimary}
               />
             }
-            value={`${calculateAverageSpeed()} km/h`}
+            value={`${avgSpeed.toFixed(1)} km/h`}
             label="Vitesse moy."
           />
           <StatCard

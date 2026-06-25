@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/src/services/api";
-import type { RootState } from "../index";
 
 export interface Achievement {
   achievement_id: string;
@@ -43,6 +42,10 @@ const initialState: AchievementsState = {
   }
 };
 
+const calculateProgressPercentage = (unlocked: number, total: number) => {
+  return total > 0 ? Math.round((unlocked / total) * 100) : 0;
+};
+
 const achievementsSlice = createSlice({
   name: "achievements",
   initialState,
@@ -56,9 +59,7 @@ const achievementsSlice = createSlice({
     setUserAchievements: (state, action: PayloadAction<UserAchievement[]>) => {
       state.userAchievements = action.payload;
       state.stats.unlocked = action.payload.filter(a => a.is_unlocked).length;
-      state.stats.progress_percentage = state.stats.total > 0
-        ? Math.round((state.stats.unlocked / state.stats.total) * 100)
-        : 0;
+      state.stats.progress_percentage = calculateProgressPercentage(state.stats.unlocked, state.stats.total);
       state.isLoading = false;
       state.error = null;
     },
@@ -71,9 +72,7 @@ const achievementsSlice = createSlice({
         achievement.unlocked_at = new Date().toISOString();
         achievement.progress = achievement.condition_value;
         state.stats.unlocked++;
-        state.stats.progress_percentage = state.stats.total > 0
-          ? Math.round((state.stats.unlocked / state.stats.total) * 100)
-          : 0;
+        state.stats.progress_percentage = calculateProgressPercentage(state.stats.unlocked, state.stats.total);
       }
     },
     updateAchievementProgress: (state, action: PayloadAction<{ achievement_id: string; progress: number }>) => {
@@ -83,14 +82,11 @@ const achievementsSlice = createSlice({
       if (achievement && !achievement.is_unlocked) {
         achievement.progress = action.payload.progress;
 
-        // Auto-unlock si le progress atteint la valeur requise
         if (achievement.progress >= achievement.condition_value) {
           achievement.is_unlocked = true;
           achievement.unlocked_at = new Date().toISOString();
           state.stats.unlocked++;
-          state.stats.progress_percentage = state.stats.total > 0
-            ? Math.round((state.stats.unlocked / state.stats.total) * 100)
-            : 0;
+          state.stats.progress_percentage = calculateProgressPercentage(state.stats.unlocked, state.stats.total);
         }
       }
     },
@@ -117,47 +113,29 @@ export const {
   clearError
 } = achievementsSlice.actions;
 
-// Thunks pour les appels API
-
-/**
- * Charger tous les achievements disponibles
- */
 export const loadAchievements = () => async (dispatch: any) => {
   try {
     dispatch(setLoading(true));
     const response = await api.get("/api/achievements");
     dispatch(setAchievements(response.data.achievements));
   } catch (error: any) {
-    console.error("Erreur lors du chargement des achievements:", error);
     dispatch(setError(error.response?.data?.error || "Erreur lors du chargement des achievements"));
   }
 };
 
-/**
- * Charger les achievements de l'utilisateur avec leur progression
- */
 export const loadUserAchievements = () => async (dispatch: any) => {
   try {
     dispatch(setLoading(true));
     const response = await api.get("/api/achievements/user");
     dispatch(setUserAchievements(response.data.achievements));
   } catch (error: any) {
-    console.error("Erreur lors du chargement des achievements utilisateur:", error);
     dispatch(setError(error.response?.data?.error || "Erreur lors du chargement des achievements"));
   }
 };
 
-/**
- * Récupérer les statistiques des achievements
- */
-export const loadAchievementStats = () => async (dispatch: any) => {
-  try {
-    const response = await api.get("/api/achievements/stats");
-    return response.data;
-  } catch (error: any) {
-    console.error("Erreur lors du chargement des stats achievements:", error);
-    throw error;
-  }
+export const loadAchievementStats = () => async () => {
+  const response = await api.get("/api/achievements/stats");
+  return response.data;
 };
 
 export default achievementsSlice.reducer;

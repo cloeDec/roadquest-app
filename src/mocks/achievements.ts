@@ -1,8 +1,3 @@
-/**
- * Données mockées pour les achievements (développement uniquement)
- * @module mocks/achievements
- */
-
 import type { UserAchievement } from "@/src/store/slices/achievementsSlice";
 
 export const mockAchievements: UserAchievement[] = [

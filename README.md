@@ -1,204 +1,224 @@
-# 🏍️ RoadQuest - Application Mobile
+# RoadQuest Mobile App
 
-Application mobile React Native pour RoadQuest, une plateforme gamifiée pour motards.
+Application mobile React Native pour motards avec tracking GPS, POIs et gamification.
 
-## 📋 Prérequis
+## Stack Technique
 
-- Node.js 18+
-- npm ou yarn
-- Expo CLI
-- Un émulateur iOS/Android ou l'app Expo Go sur votre téléphone
+| Technologie | Version | Usage |
+|-------------|---------|-------|
+| React Native | 0.81 | Framework mobile |
+| Expo | 54 | Plateforme de développement |
+| TypeScript | 5.9 | Langage |
+| Redux Toolkit | 2.11 | State management |
+| Expo Router | 6 | Navigation file-based |
+| React Native Maps | 1.20 | Cartographie Google Maps |
 
-## 🚀 Installation
+## Fonctionnalités
 
-1. Cloner le projet
-```bash
-cd roadquest-app
+- Tracking GPS en temps réel
+- Navigation avec calcul d'itinéraires
+- Découverte de POIs (cols, routes, monuments...)
+- Gamification : XP, niveaux, achievements
+- Profil avec statistiques et moto
+
+## Architecture
+
+```
+app/                          # Expo Router
+├── (auth)/
+│   ├── login.tsx
+│   └── register.tsx
+├── (tabs)/
+│   ├── index.tsx            # Carte principale
+│   ├── rides.tsx            # Historique trajets
+│   ├── awards.tsx           # Achievements
+│   ├── profile.tsx          # Profil
+│   └── social.tsx
+└── trip-detail.tsx
+
+src/
+├── components/              # Par feature
+│   ├── map/
+│   ├── profile/
+│   ├── rides/
+│   ├── trip-detail/
+│   └── achievements/
+├── config/
+│   ├── constants.ts
+│   └── poi-types.ts
+├── hooks/
+│   ├── useNavigation.ts     # Tracking GPS
+│   ├── usePOIDetection.ts   # Détection POIs
+│   └── useRouteSearch.ts    # Recherche
+├── services/
+│   ├── api.ts               # Client Axios
+│   └── auth.ts
+├── store/
+│   └── slices/
+│       ├── authSlice.ts
+│       ├── tripsSlice.ts
+│       ├── poisSlice.ts
+│       └── achievementsSlice.ts
+├── ui/
+│   ├── components/          # Design system
+│   └── theme/
+└── utils/
+    ├── distance.ts          # Calculs GPS
+    ├── formatting.ts        # Dates, durées
+    └── validation.ts        # Formulaires
 ```
 
-2. Installer les dépendances
+## Installation
+
 ```bash
+# 1. Installer les dépendances
 npm install
-```
 
-3. Créer un fichier `.env` à partir du fichier exemple
-```bash
+# 2. Configurer l'environnement
 cp .env.example .env
-```
 
-4. Configurer l'URL de l'API dans le fichier `.env`
-```env
-EXPO_PUBLIC_API_URL=http://localhost:3000
-# ou votre adresse IP locale pour tester sur un téléphone
-# EXPO_PUBLIC_API_URL=http://192.168.1.X:3000
-```
-
-## 🏃 Lancement de l'application
-
-```bash
-# Démarrer le serveur Expo
+# 3. Lancer l'application
 npm start
-
-# Ou directement sur Android
-npm run android
-
-# Ou directement sur iOS
-npm run ios
 ```
 
-## 📁 Structure du projet
+## Variables d'environnement
 
-```
-roadquest-app/
-├── app/                          # Routes et écrans (Expo Router)
-│   ├── (auth)/                   # Groupe d'authentification
-│   │   ├── login.tsx            # Écran de connexion
-│   │   ├── register.tsx         # Écran d'inscription
-│   │   └── _layout.tsx          # Layout pour auth
-│   ├── (tabs)/                   # Groupe des tabs principales
-│   │   ├── index.tsx            # Écran d'accueil
-│   │   ├── explore.tsx          # Écran d'exploration
-│   │   └── _layout.tsx          # Layout avec tabs
-│   └── _layout.tsx              # Layout racine
-│
-├── src/
-│   ├── components/              # Composants réutilisables
-│   │   └── AuthProvider.tsx    # Provider de protection des routes
-│   ├── constants/               # Constantes de l'app
-│   │   └── colors.ts            # Palette de couleurs
-│   ├── services/                # Services API
-│   │   ├── api.ts              # Configuration Axios
-│   │   └── auth.ts             # Service d'authentification
-│   └── store/                   # Redux store
-│       ├── index.ts            # Configuration du store
-│       ├── hooks.ts            # Hooks Redux typés
-│       └── slices/
-│           └── authSlice.ts    # Slice d'authentification
-│
-├── .env.example                 # Exemple de configuration
-├── package.json
-└── tsconfig.json
+```env
+# API Backend
+EXPO_PUBLIC_API_URL=http://localhost:3000
+
+# OpenRouteService
+EXPO_PUBLIC_OPENROUTE_API_KEY=votre_clé
 ```
 
-## 🔒 Fonctionnalités de sécurité implémentées
-
-### 1. Gestion sécurisée des tokens
-- Stockage dans `expo-secure-store` (chiffré)
-- Suppression automatique en cas d'erreur 401
-- Vérification au démarrage de l'application
-
-### 2. Protection des routes
-- `AuthProvider` vérifie l'authentification
-- Redirection automatique vers login si non authentifié
-- Redirection vers l'app si déjà authentifié
-
-### 3. Validation des formulaires
-- **Email** : Format validé avec regex
-- **Mot de passe** :
-  - Minimum 8 caractères
-  - Au moins 1 majuscule
-  - Au moins 1 minuscule
-  - Au moins 1 chiffre
-- **Username** : Minimum 3 caractères
-
-### 4. Actions Redux asynchrones
-- Toutes les opérations async utilisent `createAsyncThunk`
-- Pas d'opérations asynchrones dans les reducers
-- Gestion d'erreurs centralisée
-
-## 🛠️ Technologies utilisées
-
-- **React Native** : Framework mobile
-- **Expo** : Toolchain et SDK
-- **Expo Router** : Navigation basée sur le système de fichiers
-- **Redux Toolkit** : Gestion d'état
-- **Axios** : Client HTTP
-- **TypeScript** : Typage statique
-- **Expo Secure Store** : Stockage sécurisé
-
-## 🔑 Authentification
-
-L'application utilise JWT (JSON Web Tokens) pour l'authentification :
-
-1. L'utilisateur se connecte via `/api/auth/login`
-2. Le token JWT est stocké dans `expo-secure-store`
-3. Le token est ajouté automatiquement à chaque requête via un intercepteur Axios
-4. En cas d'erreur 401, le token est supprimé et l'utilisateur est redirigé vers login
-
-## 📱 Flux d'authentification
-
-```
-Démarrage App
-    ↓
-AuthProvider vérifie le token
-    ↓
-├─ Token valide → Afficher l'app
-└─ Token invalide → Rediriger vers Login
-    ↓
-Connexion réussie
-    ↓
-Stocker token + user
-    ↓
-Rediriger vers l'app
-```
-
-## 🎨 Personnalisation
-
-### Couleurs
-
-Les couleurs sont définies dans [src/constants/colors.ts](src/constants/colors.ts):
-
-```typescript
-export const Colors = {
-  dark: {
-    background: "#0A0E27",
-    surface: "#151B3B",
-    primary: "#6C63FF",
-    secondary: "#4ECDC4",
-    accent: "#FF6B6B",
-    text: "#FFFFFF",
-    textSecondary: "#9CA3AF",
-    // ...
-  }
-};
-```
-
-## 🐛 Debugging
-
-### Voir les logs Redux
-Les actions Redux sont loggées dans la console Expo Dev Tools.
-
-### Problèmes de connexion à l'API
-1. Vérifier que le backend est lancé
-2. Vérifier l'URL dans `.env`
-3. Si vous testez sur un téléphone, utiliser l'IP locale (pas localhost)
-
-### Erreur de token
-Le token est automatiquement supprimé en cas d'erreur. Reconnectez-vous.
-
-## 📝 Scripts disponibles
+## Scripts
 
 ```bash
 npm start          # Démarrer Expo
-npm run android    # Lancer sur Android
-npm run ios        # Lancer sur iOS
-npm run web        # Lancer sur le web
-npm run lint       # Linter le code
+npm run android    # Android
+npm run ios        # iOS
+npm run web        # Web
+npm run lint       # Linter
 ```
 
-## 🔄 Prochaines améliorations
+## Écrans
 
-- [ ] Refresh token automatique
-- [ ] Mode hors ligne
-- [ ] Cache des données
-- [ ] Biométrie (Face ID / Touch ID)
-- [ ] Notifications push
-- [ ] Tests unitaires et d'intégration
+| Écran | Route | Description |
+|-------|-------|-------------|
+| Carte | /(tabs)/ | Google Maps, POIs, navigation |
+| Trajets | /(tabs)/rides | Historique, stats |
+| Détail | /trip-detail | Trace GPS, infos |
+| Awards | /(tabs)/awards | Achievements |
+| Profil | /(tabs)/profile | Stats, moto, settings |
+| Login | /(auth)/login | Connexion |
+| Register | /(auth)/register | Inscription |
 
-## 📄 Licence
+## Design System
 
-Ce projet fait partie de RoadQuest.
+### Composants UI
 
-## 👥 Auteurs
+```typescript
+// Layout
+Container, Row, Column, Spacer, Divider
 
-Développé avec Claude Code
+// Typography
+Text, Caption
+
+// Inputs
+Input, Button, FAB
+
+// Display
+Card, Badge, Avatar, Icon, ProgressBar, StatCard
+
+// Navigation
+ScreenHeader, SectionHeader, TabBar
+
+// Feedback
+EmptyState
+```
+
+### Thème
+
+```typescript
+colors.brandPrimary      // #FFD700
+colors.accentPrimary     // #4A90E2
+colors.backgroundPrimary // #0A0E27
+
+spacing.xs  // 4
+spacing.sm  // 8
+spacing.md  // 16
+spacing.lg  // 24
+spacing.xl  // 32
+```
+
+## Hooks
+
+### useNavigation
+
+```typescript
+const {
+  isTracking,
+  distanceRemaining,
+  timeRemaining,
+  startNavigation,
+  stopNavigation,
+} = useNavigation(location, destination, onUpdate, onArrival);
+```
+
+### usePOIDetection
+
+```typescript
+usePOIDetection(latitude, longitude, isTracking);
+```
+
+### useRouteSearch
+
+```typescript
+const {
+  destination,
+  suggestions,
+  routeCoordinates,
+  searchPlaces,
+  selectPlace,
+  clearSearch,
+} = useRouteSearch();
+```
+
+## Authentification
+
+- JWT stocké dans `expo-secure-store`
+- Intercepteur Axios automatique
+- Redirection sur erreur 401
+- Validation formulaires :
+  - Email : regex
+  - Password : 8+ chars, majuscule, minuscule, chiffre
+  - Username : 3+ chars
+
+## Build
+
+```bash
+# Android
+eas build --platform android --profile production
+
+# iOS
+eas build --platform ios --profile production
+```
+
+## Configuration app.json
+
+```json
+{
+  "expo": {
+    "name": "RoadQuest",
+    "slug": "roadquest-app",
+    "scheme": "roadquestapp",
+    "userInterfaceStyle": "dark",
+    "ios": { "bundleIdentifier": "com.roadquest.app" },
+    "android": { "package": "com.roadquest.app" }
+  }
+}
+```
+
+## Licence
+
+MIT

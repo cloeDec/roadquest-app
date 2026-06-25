@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/src/services/api";
+import { calculateDistanceKm, calculateAverageSpeed } from "@/src/utils";
 
 export interface Coordinate {
   latitude: number;
@@ -70,11 +71,10 @@ const tripsSlice = createSlice({
         };
         state.currentTrip.coordinates.push(newCoord);
 
-        // Calculer la distance totale
         if (state.currentTrip.coordinates.length > 1) {
           const coords = state.currentTrip.coordinates;
           const lastTwo = coords.slice(-2);
-          const distance = calculateDistance(
+          const distance = calculateDistanceKm(
             lastTwo[0].latitude,
             lastTwo[0].longitude,
             lastTwo[1].latitude,
@@ -83,7 +83,6 @@ const tripsSlice = createSlice({
           state.currentTrip.distance += distance;
         }
 
-        // Calculer la durée
         state.currentTrip.duration = Math.floor(
           (Date.now() - state.currentTrip.startTime) / 1000,
         );
@@ -109,31 +108,9 @@ const tripsSlice = createSlice({
   },
 });
 
-// Fonction helper pour calculer la distance
-function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
-  const R = 6371; // Rayon de la Terre en km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-// Actions asynchrones pour communiquer avec l'API
 export const saveTripToAPI = (trip: Trip) => async (dispatch: any) => {
   try {
-    // Calculer la vitesse moyenne
-    const avgSpeed = trip.duration > 0 ? (trip.distance / (trip.duration / 3600)) : 0;
+    const avgSpeed = calculateAverageSpeed(trip.distance, trip.duration);
 
     const response = await api.post("/api/rides", {
       start_location: trip.coordinates.length > 0 ? {
@@ -156,7 +133,6 @@ export const saveTripToAPI = (trip: Trip) => async (dispatch: any) => {
     });
 
 
-    // Recharger tous les trajets depuis l'API
     dispatch(loadTripsFromAPI());
   } catch (error: any) {
     throw error;
@@ -167,7 +143,6 @@ export const loadTripsFromAPI = () => async (dispatch: any) => {
   try {
     const response = await api.get("/api/rides");
 
-    // Convertir les trajets de l'API au format du store
     const trips: Trip[] = response.data.rides.map((ride: any) => ({
       id: ride.ride_id,
       startTime: new Date(ride.created_at).getTime(),
@@ -202,9 +177,7 @@ export const deleteTripFromAPI = (tripId: string) => async (dispatch: any) => {
   }
 };
 
-// Garder pour la compatibilité (ne fait rien maintenant)
-export const saveTripsToStorage = (trips: Trip[]) => async () => {
-};
+export const saveTripsToStorage = (_trips: Trip[]) => async () => {};
 
 export const loadTripsFromStorage = loadTripsFromAPI;
 

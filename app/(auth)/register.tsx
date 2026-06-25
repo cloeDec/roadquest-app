@@ -11,6 +11,7 @@ import {
 import { colors } from "../../src/ui";
 import { useAppDispatch } from "../../src/store/hooks";
 import { registerUser } from "../../src/store/slices/authSlice";
+import { validateEmail, validatePassword, validateUsername } from "../../src/utils";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
@@ -19,35 +20,15 @@ export default function RegisterScreen() {
   const dispatch = useAppDispatch();
   const router = useRouter();
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePassword = (password: string): string | null => {
-    if (password.length < 8) {
-      return "Le mot de passe doit contenir au moins 8 caractères";
-    }
-    if (!/[A-Z]/.test(password)) {
-      return "Le mot de passe doit contenir au moins une majuscule";
-    }
-    if (!/[a-z]/.test(password)) {
-      return "Le mot de passe doit contenir au moins une minuscule";
-    }
-    if (!/[0-9]/.test(password)) {
-      return "Le mot de passe doit contenir au moins un chiffre";
-    }
-    return null;
-  };
-
   const handleRegister = async () => {
     if (!email || !username || !password) {
       Alert.alert("Erreur", "Veuillez remplir tous les champs");
       return;
     }
 
-    if (username.length < 3) {
-      Alert.alert("Erreur", "Le nom d'utilisateur doit contenir au moins 3 caractères");
+    const usernameError = validateUsername(username);
+    if (usernameError) {
+      Alert.alert("Erreur", usernameError);
       return;
     }
 

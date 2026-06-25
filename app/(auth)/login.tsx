@@ -11,17 +11,13 @@ import {
 import { colors } from "../../src/ui";
 import { useAppDispatch } from "../../src/store/hooks";
 import { loginUser } from "../../src/store/slices/authSlice";
+import { validateEmail } from "../../src/utils";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const dispatch = useAppDispatch();
   const router = useRouter();
-
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const handleLogin = async () => {
     if (!email || !password) {
